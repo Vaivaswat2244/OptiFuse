@@ -1,6 +1,15 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Star } from 'lucide-react'; 
 
 interface Repository {
   id: number;
@@ -25,20 +34,17 @@ export default function Dashboard() {
       setLoading(false);
       return;
     }
-
     if (!API_URL) {
-        setError("API URL is not configured.");
-        setLoading(false);
-        return;
+      setError("API URL is not configured.");
+      setLoading(false);
+      return;
     }
 
     fetch(`${API_URL}/api/repositories/`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     .then(res => {
-      if (!res.ok) {
-        throw new Error('Failed to fetch repositories from backend.');
-      }
+      if (!res.ok) throw new Error('Failed to fetch repositories from backend.');
       return res.json() as Promise<Repository[]>;
     })
     .then(data => {
@@ -51,25 +57,46 @@ export default function Dashboard() {
     });
   }, []);
 
-  if (loading) return <div>Loading your repositories...</div>;
-  if (error) return <div>Error: {error}</div>;
+  if (loading) return <div className="p-8 text-center">Loading your repositories...</div>;
+  if (error) return <div className="p-8 text-center text-destructive">{`Error: ${error}`}</div>;
 
-  return (
-    <div style={{ padding: '2rem' }}>
-      <h1>Your Repositories</h1>
-      <ul style={{ listStyle: 'none', padding: 0 }}>
+  if (repos){
+        return (
+    <div className="container mx-auto p-4 sm:p-8">
+      <h1 className="mb-8 text-3xl font-bold tracking-tight">Your Repositories</h1>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {repos.map(repo => (
-          <li key={repo.id} style={{ border: '1px solid #ddd', padding: '1rem', marginBottom: '1rem', borderRadius: '5px' }}>
-            <h3>
-              <a href={repo.html_url} target="_blank" rel="noopener noreferrer">
-                {repo.full_name}
-              </a>
-            </h3>
-            <p>{repo.description || 'No description provided.'}</p>
-            <span>⭐ {repo.stargazers_count}</span>
-          </li>
+          <Card key={repo.id} className="flex flex-col">
+            <CardHeader>
+              <CardTitle className="truncate">
+                <a href={repo.html_url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                  {repo.name}
+                </a>
+              </CardTitle>
+              <CardDescription className="truncate">{repo.full_name}</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-grow">
+              <p className="text-sm text-muted-foreground">
+                {repo.description || 'No description provided.'}
+              </p>
+            </CardContent>
+            <CardFooter>
+              <div className="flex items-center text-sm">
+                <Star className="mr-2 h-4 w-4 text-yellow-500" />
+                <span>{repo.stargazers_count}</span>
+              </div>
+            </CardFooter>
+          </Card>
         ))}
-      </ul>
+      </div>
     </div>
   );
+  }
+  else {
+    <h1>
+        No Api url present...
+    </h1>
+  }
+
+  
 }

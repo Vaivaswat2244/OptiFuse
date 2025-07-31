@@ -1,5 +1,6 @@
 "use client";
-
+import Link from 'next/link'; 
+import { Button } from '@/components/ui/button'; 
 import { useEffect, useState } from 'react';
 import {
   Card,
@@ -18,6 +19,9 @@ interface Repository {
   html_url: string;
   description: string | null;
   stargazers_count: number;
+  owner : {
+    login: string;
+  }
 }
 
 export default function Dashboard() {
@@ -85,6 +89,9 @@ export default function Dashboard() {
                 <Star className="mr-2 h-4 w-4 text-yellow-500" />
                 <span>{repo.stargazers_count}</span>
               </div>
+              <Link href={`/dashboard/${repo.owner.login}/${repo.name}`}>
+                <Button variant="secondary" size="sm">View Details</Button>
+              </Link>
             </CardFooter>
           </Card>
         ))}

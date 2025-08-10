@@ -16,7 +16,7 @@ A next-gen approach for minimizing server costs in using serverless functions us
 Before you begin, ensure you have the following installed:
 
 -   [Node.js](https://nodejs.org/) (v18 or newer)
--   `npm` or `yarn`
+-   `npm` or `yarn`np
 
 ---
 

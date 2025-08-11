@@ -1,89 +1,188 @@
-"use client";
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { Star } from 'lucide-react';
+"use client"
+
+import Link from "next/link"
+import { useEffect, useState } from "react"
+import { Star, Search } from "lucide-react"
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu"
 
 interface Repository {
-  id: number;
-  name: string;
-  full_name: string;
-  html_url: string;
-  description: string | null;
-  stargazers_count: number;
+  id: number
+  name: string
+  full_name: string
+  html_url: string
+  description: string | null
+  stargazers_count: number
   owner: {
-    login: string;
-  };
+    login: string
+  }
 }
 
 export default function Dashboard() {
-  const [repos, setRepos] = useState<Repository[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [repos, setRepos] = useState<Repository[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const token = localStorage.getItem('github_access_token');
-    const API_URL = process.env.NEXT_PUBLIC_API_URL;
+    // Add static glow style globally
+    const style = document.createElement("style")
+    style.innerHTML = `
+      .static-glow {
+        border: 2px solid white !important;
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.7);
+      }
+    `
+    document.head.appendChild(style)
+  }, [])
+
+  useEffect(() => {
+    const token = localStorage.getItem("github_access_token")
+    const API_URL = process.env.NEXT_PUBLIC_API_URL
 
     if (!token) {
-      setError("Not logged in. Please go to the login page.");
-      setLoading(false);
-      return;
+      setError("Not logged in. Please go to the login page.")
+      setLoading(false)
+      return
     }
     if (!API_URL) {
-      setError("API URL is not configured.");
-      setLoading(false);
-      return;
+      setError("API URL is not configured.")
+      setLoading(false)
+      return
     }
 
     fetch(`${API_URL}/api/repositories/`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
-        if (!res.ok) throw new Error('Failed to fetch repositories from backend.');
-        return res.json() as Promise<Repository[]>;
+        if (!res.ok) throw new Error("Failed to fetch repositories from backend.")
+        return res.json()
       })
       .then((data) => {
-        setRepos(data);
-        setLoading(false);
+        setRepos(data)
+        setLoading(false)
       })
       .catch((err: Error) => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, []);
+        setError(err.message)
+        setLoading(false)
+      })
+  }, [])
 
-  if (loading) return <div className="p-8 text-center">Loading your repositories...</div>;
-  if (error) return <div className="p-8 text-center text-red-500">{`Error: ${error}`}</div>;
+  if (loading)
+    return <div className="p-8 text-center">Loading your repositories...</div>
+
+  if (error)
+    return <div className="p-8 text-center text-red-500">{`Error: ${error}`}</div>
 
   return (
-    <div className="relative min-h-screen bg-[#111827] text-white font-inter">
-      {/* Stable gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-t from-orange-900/40 via-red-900/30 to-yellow-700/20 blur-3xl"></div>
+    <div className="bg-[#0d1117] min-h-screen font-sans">
+      {/* Transparent Navbar */}
+      <header className="bg-transparent border-b border-[#495057]/50 backdrop-blur-md">
+        <div className="container mx-auto px-8 py-4 flex justify-between items-center">
+          <Link href="/" className="text-xl font-bold text-[#e6edf3]">
+            OptiFuse
+          </Link>
 
-      {/* Main content */}
-      <div className="relative container mx-auto px-4 py-12">
-        <h1 className="text-3xl font-bold mb-8">Your Repositories</h1>
+          <NavigationMenu>
+            <NavigationMenuList>
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <Link href="/" className={navigationMenuTriggerStyle()}>
+                    Home
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
 
+              <NavigationMenuItem>
+                <NavigationMenuTrigger>Explore</NavigationMenuTrigger>
+                <NavigationMenuContent className="bg-[#161b22] border border-[#495057] rounded-lg p-4">
+                  <ul className="grid gap-3 md:w-[200px]">
+                    <li>
+                      <Link
+                        href="#"
+                        className="block p-2 text-[#e6edf3] hover:bg-[#21262d] rounded"
+                      >
+                        Trending
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        href="#"
+                        className="block p-2 text-[#e6edf3] hover:bg-[#21262d] rounded"
+                      >
+                        Topics
+                      </Link>
+                    </li>
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <Link href="/about" className={navigationMenuTriggerStyle()}>
+                    About
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <Link href="/contact" className={navigationMenuTriggerStyle()}>
+                    Contact Us
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="container mx-auto p-8">
+        {/* Title + Search */}
+        <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
+          <h1 className="text-3xl font-bold text-[#e6edf3]">Your Repositories</h1>
+
+          <div className="relative w-full max-w-sm md:w-80 md:ml-auto">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8b949e] w-4 h-4 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Find a repository..."
+              className="w-full bg-[#161b22] text-[#e6edf3] border border-[#495057] rounded-lg py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-[#2d8cff] placeholder:text-[#8b949e]"
+            />
+          </div>
+        </div>
+
+        {/* Repo Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {repos.map((repo) => (
             <div
               key={repo.id}
-              className="bg-[#1F2937] rounded-xl shadow-md overflow-hidden p-6 transition-all hover:shadow-lg hover:-translate-y-1"
+              className="bg-[#161b22] rounded-xl border p-8 flex flex-col justify-between shadow-lg hover:border-white transition-all duration-300 transform hover:-translate-y-1 static-glow"
             >
-              <h2 className="text-xl font-semibold truncate">{repo.name}</h2>
-              <p className="text-gray-400 text-sm mb-4">{repo.full_name}</p>
-              <p className="text-gray-400 mb-6 text-sm">
-                {repo.description || 'No description provided.'}
-              </p>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center text-gray-400">
+              <div>
+                <h2 className="text-2xl font-semibold text-[#e6edf3] font-mono">
+                  {repo.name}
+                </h2>
+                <p className="text-base text-[#8b949e] mb-4">{repo.full_name}</p>
+                <p className="text-base text-[#8b949e] mb-4">
+                  {repo.description || "No description provided."}
+                </p>
+              </div>
+              <div className="flex justify-between items-center mt-6">
+                <div className="flex items-center text-[#8b949e] text-base">
                   <Star className="text-yellow-500 mr-1 h-4 w-4" />
                   <span>{repo.stargazers_count}</span>
                 </div>
                 <Link
                   href={`/dashboard/${repo.owner.login}/${repo.name}`}
-                  className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+                  className="bg-[#2d8cff] text-white px-4 py-2 rounded-lg hover:bg-[#58a6ff] transition-colors text-base"
                 >
                   View Details
                 </Link>
@@ -93,5 +192,5 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
-  );
+  )
 }

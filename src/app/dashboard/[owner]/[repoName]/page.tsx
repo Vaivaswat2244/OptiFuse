@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { Zap } from 'lucide-react';
 
 interface PageProps {
   params: {
@@ -54,6 +56,7 @@ export default function RepositoryDetailPage({ params }: PageProps) {
       setLoading(false);
     });
   }, [owner, repoName]); 
+  
   const renderContent = () => {
     if (loading) {
       return <p>Loading file content...</p>;
@@ -79,8 +82,16 @@ export default function RepositoryDetailPage({ params }: PageProps) {
         </Link>
       </div>
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>File Content: serverless.yml</CardTitle>
+          {fileContent && (
+            <Link href={`/dashboard/${owner}/${repoName}/optimize`}>
+              <Button className="flex items-center space-x-2">
+                <Zap className="h-4 w-4" />
+                Optimize Configuration
+              </Button>
+            </Link>
+          )}
         </CardHeader>
         <CardContent>
           {renderContent()}

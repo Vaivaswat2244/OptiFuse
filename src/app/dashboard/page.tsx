@@ -43,7 +43,7 @@ export default function Dashboard() {
   }, [])
 
   useEffect(() => {
-    const token = localStorage.getItem("github_access_token")
+    const token = localStorage.getItem("optifuse_api_token")
     const API_URL = process.env.NEXT_PUBLIC_API_URL
 
     if (!token) {
@@ -58,7 +58,7 @@ export default function Dashboard() {
     }
 
     fetch(`${API_URL}/api/repositories/`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Token ${token}` },
     })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch repositories from backend.")
@@ -83,7 +83,7 @@ export default function Dashboard() {
   return (
     <div className="bg-[#0d1117] min-h-screen font-sans">
       {/* Transparent Navbar */}
-      <header className="bg-transparent border-b border-[#495057]/50 backdrop-blur-md">
+      {/* <header className="bg-transparent border-b border-[#495057]/50 backdrop-blur-md">
         <div className="container mx-auto px-8 py-4 flex justify-between items-center">
           <Link href="/" className="text-xl font-bold text-[#e6edf3]">
             OptiFuse
@@ -141,7 +141,7 @@ export default function Dashboard() {
             </NavigationMenuList>
           </NavigationMenu>
         </div>
-      </header>
+      </header> */}
 
       {/* Main Content */}
       <div className="container mx-auto p-8">

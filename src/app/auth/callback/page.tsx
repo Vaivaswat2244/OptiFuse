@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 
 interface AuthResponse {
   username: string;
-  access_token: string;
+  token: string;
 }
 
 export default function AuthCallback() {
@@ -31,7 +31,7 @@ export default function AuthCallback() {
         return res.json() as Promise<AuthResponse>; 
       })
       .then(data => {
-        localStorage.setItem('github_access_token', data.access_token);
+        localStorage.setItem('optifuse_api_token', data.token);
         router.push('/dashboard');
       })
       .catch((err: Error) => {

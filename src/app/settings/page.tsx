@@ -1,4 +1,3 @@
-// optifuse/client/app/settings/page.tsx
 "use client";
 
 import { useEffect, useState, FormEvent } from 'react';
@@ -6,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton'; // For loading state
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // For messages
-import { Copy, Check } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Copy, Check, ExternalLink, CheckCircle, Download } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
-// Define the shape of the data we expect from the /api/profile/settings/ endpoint
+// Define the shape of the data from the /api/profile/settings/ endpoint
 interface ProfileData {
   username: string;
   subscription: string;
@@ -18,21 +18,75 @@ interface ProfileData {
   aws_external_id: string;
 }
 
+// The CloudFormation template for the user to copy
+const CLOUDFORMATION_TEMPLATE = `
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  This template creates a read-only IAM Role for Optifuse to securely access
+  AWS X-Ray and CloudWatch Logs data for performance analysis.
+
+Parameters:
+  OptifuseAWSAccountId:
+    Type: String
+    Description: The AWS Account ID provided by the Optifuse application.
+    Default: 616860869053
+
+  OptifuseExternalId:
+    Type: String
+    Description: The unique External ID provided on your Optifuse settings page. This ensures only you can access this role.
+
+Resources:
+  OptifuseUserAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: Optifuse-User-Access-Role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::\${OptifuseAWSAccountId}:root"
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Ref OptifuseExternalId
+      Policies:
+        - PolicyName: OptifuseReadOnlyPerformanceDataPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "xray:GetTraceSummaries"
+                  - "xray:BatchGetTraces"
+                  - "logs:DescribeLogGroups"
+                  - "logs:FilterLogEvents"
+                  - "logs:StartQuery"
+                  - "logs:GetQueryResults"
+                Resource: "*"
+
+Outputs:
+  RoleArn:
+    Description: The ARN of the created IAM Role. Copy this value into your Optifuse settings page.
+    Value: !GetAtt OptifuseUserAccessRole.Arn
+`.trim();
+
+// Main Component
 export default function SettingsPage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [arnInput, setArnInput] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [isCopied, setIsCopied] = useState(false);
+  const [isExtIdCopied, setIsExtIdCopied] = useState(false);
+  const [isTemplateCopied, setIsTemplateCopied] = useState(false);
+  const router = useRouter();
 
-  // Fetch profile data when the component mounts
   useEffect(() => {
-    const token = localStorage.getItem('optifuse_api_token'); // Use the correct token key
+    const token = localStorage.getItem('optifuse_api_token');
     const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
     if (!token || !API_URL) {
-      setMessage({ type: 'error', text: 'Configuration error or not logged in.' });
-      setIsLoading(false);
+      router.push('/login');
       return;
     }
 
@@ -49,12 +103,29 @@ export default function SettingsPage() {
     })
     .catch(err => setMessage({ type: 'error', text: err.message }))
     .finally(() => setIsLoading(false));
-  }, []);
+  }, [router]);
 
-  const handleCopy = (text: string) => {
+  const handleCopy = (text: string, type: 'extId' | 'template') => {
     navigator.clipboard.writeText(text);
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000); // Reset after 2 seconds
+    if (type === 'extId') {
+      setIsExtIdCopied(true);
+      setTimeout(() => setIsExtIdCopied(false), 2000);
+    } else {
+      setIsTemplateCopied(true);
+      setTimeout(() => setIsTemplateCopied(false), 2000);
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    const blob = new Blob([CLOUDFORMATION_TEMPLATE], { type: 'text/yaml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'optifuse-template.yml';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const handleSubmit = (e: FormEvent) => {
@@ -65,124 +136,112 @@ export default function SettingsPage() {
 
     fetch(`${API_URL}/api/profile/settings/`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Token ${token}`
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Token ${token}` },
       body: JSON.stringify({ aws_role_arn: arnInput })
     })
-    .then(res => {
-      if (!res.ok) throw new Error('Failed to save settings.');
-      return res.json();
-    })
-    .then(data => {
-      if (data.message) {
-        setMessage({ type: 'success', text: 'Settings saved successfully!' });
+    .then(res => res.json().then(data => ({ ok: res.ok, data })))
+    .then(({ ok, data }) => {
+      if (ok) {
+        setMessage({ type: 'success', text: data.message });
+        setProfile(prev => prev ? { ...prev, aws_role_arn: arnInput } : null);
       } else {
-        setMessage({ type: 'error', text: data.error || 'An unknown error occurred.' });
+        throw new Error(data.error || 'An unknown error occurred.');
       }
     })
     .catch(err => setMessage({ type: 'error', text: err.message }));
   };
 
   if (isLoading) {
-    return <SettingsPageSkeleton />; // Show a loading skeleton
+    return <SettingsPageSkeleton />;
   }
-
-  if (!profile) {
-    return (
-      <div className="container mx-auto p-8">
-        <Alert variant="destructive">
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{message?.text || 'Could not load your profile. Please try logging in again.'}</AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  const YOUR_OPTIFUSE_AWS_ACCOUNT_ID = "123456789012"; // IMPORTANT: Replace with your actual AWS Account ID
+  
+  const YOUR_OPTIFUSE_AWS_ACCOUNT_ID = "616860869053"; 
 
   return (
     <main className="container mx-auto p-4 sm:p-8 max-w-4xl">
-      <h1 className="text-3xl font-bold tracking-tight mb-8">Settings</h1>
+      <h1 className="text-3xl font-bold tracking-tight mb-8">AWS Integration Settings</h1>
+      
+      {profile?.aws_role_arn && (
+        <Alert variant="default" className="mb-6 bg-green-950/50 border-green-800 text-green-300">
+          <CheckCircle className="h-4 w-4 text-green-400" />
+          <AlertTitle>AWS Account Connected</AlertTitle>
+          <AlertDescription>
+            Optifuse is connected to your AWS account. You can now run live analyses.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Card>
         <CardHeader>
-          <CardTitle>AWS Integration</CardTitle>
+          <CardTitle>Connect Your AWS Account</CardTitle>
           <CardDescription>
-            Securely grant Optifuse read-only access to your AWS X-Ray data for live performance analysis.
+            Follow these steps to securely grant Optifuse read-only access to your AWS data.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
-          {/* Step 1 */}
-          <div className="space-y-3">
-            <h3 className="font-semibold text-lg">Step 1: Provide these values in AWS</h3>
-            <p className="text-sm text-muted-foreground">
-              When deploying our CloudFormation stack in your AWS account, you will be prompted for the following parameters.
-            </p>
-            <div className="space-y-2">
-              <Label>Your Optifuse AWS Account ID</Label>
-              <div className="flex items-center gap-2">
-                <Input readOnly value={YOUR_OPTIFUSE_AWS_ACCOUNT_ID} className="font-mono" />
-              </div>
+          <div className="space-y-3 p-4 border rounded-lg">
+            <h3 className="font-semibold text-lg">Step 1: Get Your Connection Details</h3>
+            <p className="text-sm text-muted-foreground">You will need these two values to create the secure connection in AWS.</p>
+            <div className="space-y-2 pt-2">
+              <Label>Optifuse AWS Account ID</Label>
+              <Input readOnly value={YOUR_OPTIFUSE_AWS_ACCOUNT_ID} className="font-mono bg-secondary" />
             </div>
             <div className="space-y-2">
               <Label>Your Unique External ID</Label>
               <div className="flex items-center gap-2">
-                <Input readOnly value={profile.aws_external_id} className="font-mono" />
-                <Button variant="outline" size="icon" onClick={() => handleCopy(profile.aws_external_id)}>
-                  {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                <Input readOnly value={profile?.aws_external_id || 'Loading...'} className="font-mono bg-secondary" />
+                <Button variant="outline" size="icon" onClick={() => handleCopy(profile!.aws_external_id, 'extId')}>
+                  {isExtIdCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
           </div>
 
-          {/* Step 2 */}
-          <div className="space-y-3">
-             <h3 className="font-semibold text-lg">Step 2: Launch the AWS CloudFormation Stack</h3>
-            <p className="text-sm text-muted-foreground">
-              Click the button below to go to the AWS CloudFormation console. You will need to provide the template we've supplied in our documentation.
-            </p>
-            <Button asChild>
-              <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/create/template" target="_blank" rel="noopener noreferrer">
-                Launch Stack in AWS
-              </a>
-            </Button>
+          <div className="space-y-3 p-4 border rounded-lg">
+            <h3 className="font-semibold text-lg">Step 2: Create and Deploy the IAM Role in AWS</h3>
+            <p className="text-sm text-muted-foreground">Save the template below as a file (e.g., `optifuse-template.yml`), then upload it in the AWS CloudFormation console.</p>
+            <div className="relative">
+              <pre className="p-4 bg-muted rounded-md overflow-x-auto text-xs max-h-40 whitespace-pre-wrap">
+                <code>{CLOUDFORMATION_TEMPLATE}</code>
+              </pre>
+              <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => handleCopy(CLOUDFORMATION_TEMPLATE, 'template')}>
+                {isTemplateCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              {/* --- NEW: Download Button --- */}
+              <Button onClick={handleDownloadTemplate}>
+                <Download className="mr-2 h-4 w-4" />
+                Download Template (.yml)
+              </Button>
+              <Button asChild variant="secondary">
+                <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/create/template" target="_blank" rel="noopener noreferrer">
+                  Launch Stack in AWS <ExternalLink className="ml-2 h-4 w-4"/>
+                </a>
+              </Button>
+            </div>
           </div>
 
-          {/* Step 3 */}
-          <div className="space-y-3">
-            <h3 className="font-semibold text-lg">Step 3: Save your new Role ARN</h3>
-            <p className="text-sm text-muted-foreground">
-              After the stack is created, find the `RoleArn` in the "Outputs" tab, paste it here, and save.
-            </p>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-3 p-4 border rounded-lg">
+            <h3 className="font-semibold text-lg">Step 3: Save Your New Role ARN</h3>
+            <p className="text-sm text-muted-foreground">After the stack is created, find the `RoleArn` in the "Outputs" tab, paste it here, and save.</p>
+            <form onSubmit={handleSubmit} className="space-y-4 pt-2">
               <div className="space-y-2">
                 <Label htmlFor="arn">AWS Role ARN</Label>
-                <Input
-                  id="arn"
-                  value={arnInput}
-                  onChange={(e) => setArnInput(e.target.value)}
-                  placeholder="arn:aws:iam::ACCOUNT_ID:role/Optifuse-User-Access-Role"
-                  className="font-mono"
-                />
+                <Input id="arn" value={arnInput} onChange={(e) => setArnInput(e.target.value)} placeholder="arn:aws:iam::..." className="font-mono" />
               </div>
               <Button type="submit">Save Settings</Button>
             </form>
           </div>
         </CardContent>
         <CardFooter>
-          {message && (
-            <Alert variant={message.type === 'error' ? 'destructive' : 'default'}>
-              <AlertDescription>{message.text}</AlertDescription>
-            </Alert>
-          )}
+          {message && <Alert variant={message.type === 'error' ? 'destructive' : 'default'}><AlertDescription>{message.text}</AlertDescription></Alert>}
         </CardFooter>
       </Card>
     </main>
   );
 }
 
-// A simple skeleton component for a better loading experience
 function SettingsPageSkeleton() {
   return (
     <main className="container mx-auto p-4 sm:p-8 max-w-4xl">
@@ -193,16 +252,20 @@ function SettingsPageSkeleton() {
           <Skeleton className="h-4 w-full mt-2" />
         </CardHeader>
         <CardContent className="space-y-8">
-          <div className="space-y-3">
-            <Skeleton className="h-6 w-1/3" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-10 w-full mt-2" />
+          <div className="space-y-3 p-4 border rounded-lg">
+            <Skeleton className="h-6 w-1/3 mb-2" />
+            <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full mt-2" />
           </div>
-          <div className="space-y-3">
-            <Skeleton className="h-6 w-1/3" />
-            <Skeleton className="h-4 w-full" />
+          <div className="space-y-3 p-4 border rounded-lg">
+            <Skeleton className="h-6 w-1/3 mb-2" />
+            <Skeleton className="h-32 w-full" />
             <Skeleton className="h-10 w-48 mt-2" />
+          </div>
+          <div className="space-y-3 p-4 border rounded-lg">
+             <Skeleton className="h-6 w-1/3 mb-2" />
+             <Skeleton className="h-10 w-full" />
+             <Skeleton className="h-10 w-32 mt-4" />
           </div>
         </CardContent>
       </Card>

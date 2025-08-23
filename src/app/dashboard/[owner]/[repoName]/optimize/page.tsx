@@ -53,6 +53,7 @@ export default function OptimizePage({ params }: PageProps) {
     })
     .then(async res => {
       const data = await res.json();
+      console.log(data);
       if (!res.ok) {
         throw new Error(data.details || data.error || 'Failed to run simulation.');
       }
@@ -129,13 +130,13 @@ export default function OptimizePage({ params }: PageProps) {
               <TableRow key={result.name} className={result.feasible ? 'bg-secondary' : 'text-muted-foreground'}>
                 <TableCell className="font-medium">{result.name}</TableCell>
                 <TableCell>{result.feasible ? '✓ Yes' : '✗ No'}</TableCell>
-                <TableCell className="text-right font-mono">{result.cost.toFixed(8)}</TableCell>
-                <TableCell className="text-right font-mono">{result.latency.toFixed(2)}</TableCell>
+                <TableCell className="text-right font-mono">{result.cost}</TableCell>
+                <TableCell className="text-right font-mono">{result.latency}</TableCell>
                 <TableCell className="text-right font-mono">{result.groups?.length || 'N/A'}</TableCell>
                 <TableCell className="text-xs">{result.error || ''}</TableCell>
               </TableRow>
             ))}
-          </TableBody>
+          </TableBody> 
         </Table>
       </div>
     );

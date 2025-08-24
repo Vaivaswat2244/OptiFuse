@@ -18,7 +18,6 @@ interface ProfileData {
   aws_external_id: string;
 }
 
-// The CloudFormation template for the user to copy
 const CLOUDFORMATION_TEMPLATE = `
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
@@ -29,7 +28,7 @@ Parameters:
   OptifuseAWSAccountId:
     Type: String
     Description: The AWS Account ID provided by the Optifuse application.
-    Default: 616860869053
+    Default: 616860869053 # The Optifuse Service Account ID
 
   OptifuseExternalId:
     Type: String
@@ -45,6 +44,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
+              # Escaped for JavaScript template literal
               AWS: !Sub "arn:aws:iam::\${OptifuseAWSAccountId}:root"
             Action: sts:AssumeRole
             Condition:
@@ -57,12 +57,16 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  # Permissions for AWS X-Ray (for dependency graph)
                   - "xray:GetTraceSummaries"
                   - "xray:BatchGetTraces"
+                  - "xray:ListResourcePolicies"
+                  # Permissions for AWS CloudWatch Logs (for performance metrics)
                   - "logs:DescribeLogGroups"
-                  - "logs:FilterLogEvents"
                   - "logs:StartQuery"
+                  - "logs:StopQuery"
                   - "logs:GetQueryResults"
+                  - "logs:FilterLogEvents"
                 Resource: "*"
 
 Outputs:

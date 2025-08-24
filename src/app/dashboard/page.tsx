@@ -3,15 +3,7 @@
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { Star, Search } from "lucide-react"
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu"
+import ServerLoader from "@/components/ui/server-loader"
 
 interface Repository {
   id: number
@@ -75,13 +67,15 @@ export default function Dashboard() {
   }, [])
 
   if (loading)
-    return <div className="p-8 text-center">Loading your repositories...</div>
+    return <div className="flex items-center justify-center min-h-screen text-center">
+      <ServerLoader/>
+      </div>
 
   if (error)
     return <div className="p-8 text-center text-red-500">{`Error: ${error}`}</div>
 
   return (
-    <div className="bg-[#0d1117] min-h-screen font-sans">
+    <div className=" min-h-screen font-sans">
       {/* Transparent Navbar */}
       {/* <header className="bg-transparent border-b border-[#495057]/50 backdrop-blur-md">
         <div className="container mx-auto px-8 py-4 flex justify-between items-center">
@@ -164,7 +158,7 @@ export default function Dashboard() {
           {repos.map((repo) => (
             <div
               key={repo.id}
-              className="bg-[#161b22] rounded-xl border p-8 flex flex-col justify-between shadow-lg hover:border-white transition-all duration-300 transform hover:-translate-y-1 static-glow"
+              className="bg-[#161b22] rounded-xl border p-8 flex flex-col justify-between shadow-lg hover:border-white transition-all duration-300 transform hover:-translate-y-1"
             >
               <div>
                 <h2 className="text-2xl font-semibold text-[#e6edf3] font-mono">

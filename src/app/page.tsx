@@ -150,6 +150,7 @@ export default function LandingPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up animation-delay-600">
+              <Link href='/login'>
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white border-0 group"
@@ -157,6 +158,7 @@ export default function LandingPage() {
                 Get Started Free
                 <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Button>
+              </Link>
               <Button
                 size="lg"
                 variant="outline"

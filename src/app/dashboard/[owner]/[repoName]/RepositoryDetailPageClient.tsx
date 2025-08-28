@@ -91,7 +91,7 @@ export function RepositoryDetailPageClient({ params }: RepositoryDetailPageClien
   return (
     <main className="container mx-auto p-4 sm:p-8">
       <div className="mb-8">
-        <Link href="/dashboard" className="text-sm text-muted-foreground hover:underline">
+        <Link href="/dashboard" className="text-sm text-white hover:underline">
           ← Back to Dashboard
         </Link>
       </div>
@@ -99,7 +99,7 @@ export function RepositoryDetailPageClient({ params }: RepositoryDetailPageClien
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <div className="space-y-1.5">
             <CardTitle>{repoName}</CardTitle>
-            <p className="text-sm text-muted-foreground">File serverless.yml</p>
+            <p className="text-sm text-white">File serverless.yml</p>
           </div>
           {/* Only show the button if the file was fetched successfully */}
           {fileContent && !error && (

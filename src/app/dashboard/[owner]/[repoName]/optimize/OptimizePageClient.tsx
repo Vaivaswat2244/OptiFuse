@@ -82,7 +82,7 @@ export function OptimizePageClient({ params }: OptimizePageClientProps) {
     if (error) {
       return (
         <Alert variant="destructive" className="m-6">
-          <AlertCircle className="h-4 w-4" />
+          <AlertCircle className="h-4 w-4 text-white" />
           <AlertTitle>Analysis Failed</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
@@ -90,7 +90,7 @@ export function OptimizePageClient({ params }: OptimizePageClientProps) {
     }
 
     if (!results || results.length === 0) {
-      return <p className="p-6 text-muted-foreground">No simulation results were generated.</p>;
+      return <p className="p-6 text-white">No simulation results were generated.</p>;
     }
 
     const bestResult = results.find(r => r.feasible);
@@ -146,7 +146,7 @@ export function OptimizePageClient({ params }: OptimizePageClientProps) {
       <div className="mb-8">
         <Link 
           href={`/dashboard/${owner}/${repoName}`} 
-          className="text-sm text-muted-foreground hover:underline flex items-center space-x-1"
+          className="text-sm text-white hover:underline flex items-center space-x-1"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Back to Repository View</span>
@@ -154,8 +154,8 @@ export function OptimizePageClient({ params }: OptimizePageClientProps) {
       </div>
 
       <div className="mb-6">
-        <h1 className="text-3xl font-bold">Live Optimization Analysis</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className="text-3xl text-white font-bold">Live Optimization Analysis</h1>
+        <p className="text-white mt-2">
           Analyzing your serverless.yml structure combined with live performance data from AWS.
         </p>
       </div>

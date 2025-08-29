@@ -2,6 +2,8 @@
 
 A next-gen approach for minimizing server costs in using serverless functions using fusion functions.
 
+[Presentation](https://www.canva.com/design/DAGxPae4g0E/k2_8SLQWYP-6tV9PBV3PHw/view?utm_content=DAGxPae4g0E&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h87955bdeef)
+
 ## Features
 
 -   Clean UI built with reusable components

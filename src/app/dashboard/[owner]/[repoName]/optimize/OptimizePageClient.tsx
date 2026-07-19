@@ -52,14 +52,37 @@ export function OptimizePageClient({ params }: OptimizePageClientProps) {
     })
     .then(async res => {
       const data = await res.json();
-      console.log(data);
+      
       if (!res.ok) {
         throw new Error(data.details || data.error || 'Failed to run simulation.');
       }
-      return data as SimulationResult[];
+      
+      // Safely extract the array whether it is nested inside another results object or not
+      let rawResults = [];
+      if (data.results && Array.isArray(data.results.results)) {
+        rawResults = data.results.results;
+      } else if (data.results && Array.isArray(data.results)) {
+        rawResults = data.results;
+      } else if (Array.isArray(data)) {
+        rawResults = data;
+      }
+      
+      // Map the nested Go backend structure to our flat React interface
+      const mappedData = rawResults.map((r: any) => ({
+        name: r.name,
+        cost: r.metrics?.total_cost_usd || 0,
+        latency: r.metrics?.latency_ms || 0,
+        feasible: r.metrics?.feasible || false,
+        groups: r.groups || [],
+        runtime: r.metrics?.runtime_ms || 0,
+        // Map error_message from the backend to error in the frontend
+        error: r.error_message || (r.error ? "Simulation failed" : undefined)
+      }));
+
+      return mappedData as SimulationResult[];
     })
-    .then(data => {
-      setResults(data);
+    .then(mappedData => {
+      setResults(mappedData);
     })
     .catch((err: Error) => {
       setError(err.message);
@@ -93,7 +116,7 @@ export function OptimizePageClient({ params }: OptimizePageClientProps) {
       return <p className="p-6 text-white">No simulation results were generated.</p>;
     }
 
-    const bestResult = results.find(r => r.feasible);
+    const bestResult = results.find(r => r.feasible && !r.error);
 
     return (
       <div className="p-6 space-y-6">
@@ -109,7 +132,7 @@ export function OptimizePageClient({ params }: OptimizePageClientProps) {
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>No Feasible Solution Found</AlertTitle>
-            <AlertDescription>None of the algorithms could find a fusion strategy that meets your applications constraints.</AlertDescription>
+            <AlertDescription>None of the algorithms could find a fusion strategy that meets your application's constraints.</AlertDescription>
           </Alert>
         )}
 
@@ -129,10 +152,16 @@ export function OptimizePageClient({ params }: OptimizePageClientProps) {
               <TableRow key={result.name} className={result.feasible ? 'bg-secondary' : 'text-muted-foreground'}>
                 <TableCell className="font-medium">{result.name}</TableCell>
                 <TableCell>{result.feasible ? '✓ Yes' : '✗ No'}</TableCell>
-                <TableCell className="text-right font-mono">{result.cost}</TableCell>
-                <TableCell className="text-right font-mono">{result.latency}</TableCell>
-                <TableCell className="text-right font-mono">{result.groups?.length || 'N/A'}</TableCell>
-                <TableCell className="text-xs">{result.error || ''}</TableCell>
+                <TableCell className="text-right font-mono">
+                  {result.cost > 0 ? result.cost.toFixed(6) : '-'}
+                </TableCell>
+                <TableCell className="text-right font-mono">
+                  {result.latency > 0 ? result.latency : '-'}
+                </TableCell>
+                <TableCell className="text-right font-mono">
+                  {result.groups?.length > 0 ? result.groups.length : 'N/A'}
+                </TableCell>
+                <TableCell className="text-xs text-red-400">{result.error || ''}</TableCell>
               </TableRow>
             ))}
           </TableBody> 

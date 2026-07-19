@@ -19,11 +19,11 @@ interface Repository {
 
 export function DashboardClient() {
   const [repos, setRepos] = useState<Repository[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Add static glow style globally
     const style = document.createElement("style");
     style.innerHTML = `
       .static-glow {
@@ -35,7 +35,9 @@ export function DashboardClient() {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem("optifuse_api_token");
+    // Make sure this matches exactly what you are saving in localStorage during login!
+    // (In our earlier tests we used 'optifuse_token', make sure this matches)
+    const token = localStorage.getItem("optifuse_api_token") || localStorage.getItem("optifuse_token");
     const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
     if (!token) {
@@ -66,6 +68,12 @@ export function DashboardClient() {
       });
   }, []);
 
+  // <-- New filtering logic
+  const filteredRepos = repos.filter((repo) =>
+    repo.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (repo.description && repo.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
   if (loading)
     return (
       <div className="flex items-center justify-center min-h-screen text-center">
@@ -77,9 +85,8 @@ export function DashboardClient() {
     return <div className="p-8 text-center text-red-500">{`Error: ${error}`}</div>;
 
   return (
-    <div className=" min-h-screen font-sans">
+    <div className="min-h-screen font-sans">
       <div className="container mx-auto p-8">
-        {/* Title + Search */}
         <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
           <h1 className="text-3xl font-bold text-[#e6edf3]">Your Repositories</h1>
 
@@ -88,14 +95,16 @@ export function DashboardClient() {
             <input
               type="text"
               placeholder="Find a repository..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)} // <-- Update state on type
               className="w-full bg-[#161b22] text-[#e6edf3] border border-[#495057] rounded-lg py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-[#2d8cff] placeholder:text-[#8b949e]"
             />
           </div>
         </div>
 
-        {/* Repo Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {repos.map((repo) => (
+          {/* Use the filtered array here instead of the raw repos array */}
+          {filteredRepos.map((repo) => (
             <div
               key={repo.id}
               className="bg-[#161b22] rounded-xl border p-8 flex flex-col justify-between shadow-lg hover:border-white transition-all duration-300 transform hover:-translate-y-1"
@@ -105,7 +114,7 @@ export function DashboardClient() {
                   {repo.name}
                 </h2>
                 <p className="text-base text-[#8b949e] mb-4">{repo.full_name}</p>
-                <p className="text-base text-[#8b949e] mb-4">
+                <p className="text-base text-[#8b949e] mb-4 line-clamp-3">
                   {repo.description || "No description provided."}
                 </p>
               </div>
@@ -123,6 +132,13 @@ export function DashboardClient() {
               </div>
             </div>
           ))}
+          
+          {/* Quick empty state if they search for something that doesn't exist */}
+          {filteredRepos.length === 0 && (
+             <div className="col-span-full text-center text-[#8b949e] py-12">
+               No repositories match your search.
+             </div>
+          )}
         </div>
       </div>
     </div>

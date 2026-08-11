@@ -28,6 +28,9 @@ interface OptimizePageClientProps {
 
 export function OptimizePageClient({ params }: OptimizePageClientProps) {
   const [results, setResults] = useState<SimulationResult[] | null>(null);
+  // The algorithm the backend picked. It already ranks feasible candidates by
+  // total cost, so we display its choice rather than re-deriving one here.
+  const [recommended, setRecommended] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { owner, repoName } = params;
@@ -57,16 +60,21 @@ export function OptimizePageClient({ params }: OptimizePageClientProps) {
         throw new Error(data.details || data.error || 'Failed to run simulation.');
       }
       
-      // Safely extract the array whether it is nested inside another results object or not
+      // The gateway wraps the plan: { results: { results: [...], recommended: {...} } }
+      // so `plan` is the OptimizationPlan and `plan.results` the algorithm list.
+      const plan = data.results ?? data;
+
       let rawResults = [];
-      if (data.results && Array.isArray(data.results.results)) {
-        rawResults = data.results.results;
-      } else if (data.results && Array.isArray(data.results)) {
-        rawResults = data.results;
+      if (plan && Array.isArray(plan.results)) {
+        rawResults = plan.results;
+      } else if (Array.isArray(plan)) {
+        rawResults = plan;
       } else if (Array.isArray(data)) {
         rawResults = data;
       }
-      
+
+      const recommendedName: string | null = plan?.recommended?.name ?? null;
+
       // Map the nested Go backend structure to our flat React interface
       const mappedData = rawResults.map((r: any) => ({
         name: r.name,
@@ -79,10 +87,11 @@ export function OptimizePageClient({ params }: OptimizePageClientProps) {
         error: r.error_message || (r.error ? "Simulation failed" : undefined)
       }));
 
-      return mappedData as SimulationResult[];
+      return { mappedData: mappedData as SimulationResult[], recommendedName };
     })
-    .then(mappedData => {
+    .then(({ mappedData, recommendedName }) => {
       setResults(mappedData);
+      setRecommended(recommendedName);
     })
     .catch((err: Error) => {
       setError(err.message);
@@ -116,7 +125,21 @@ export function OptimizePageClient({ params }: OptimizePageClientProps) {
       return <p className="p-6 text-white">No simulation results were generated.</p>;
     }
 
-    const bestResult = results.find(r => r.feasible && !r.error);
+    // Prefer the backend's own recommendation. Fall back to the cheapest feasible
+    // candidate only if it is missing — never to the *first* one, which is always
+    // NoFusion and would announce "no fusion" even when a cheaper fusion exists.
+    const feasible = results.filter(r => r.feasible && !r.error);
+    const bestResult =
+      feasible.find(r => r.name === recommended) ??
+      (feasible.length > 0
+        ? feasible.reduce((a, b) => (b.cost < a.cost ? b : a))
+        : undefined);
+
+    const baseline = results.find(r => r.name === 'NoFusion');
+    const savingsPct =
+      bestResult && baseline && baseline.cost > 0 && bestResult !== baseline
+        ? ((baseline.cost - bestResult.cost) / baseline.cost) * 100
+        : null;
 
     return (
       <div className="p-6 space-y-6">
@@ -125,7 +148,13 @@ export function OptimizePageClient({ params }: OptimizePageClientProps) {
             <CheckCircle className="h-4 w-4 text-green-400" />
             <AlertTitle className="text-green-300">Best Option Found: {bestResult.name}</AlertTitle>
             <AlertDescription className="text-green-400">
-              The {bestResult.name} algorithm provided the most cost-effective feasible solution.
+              The {bestResult.name} algorithm provided the most cost-effective feasible solution
+              {savingsPct !== null && savingsPct > 0
+                ? `, ${savingsPct.toFixed(1)}% cheaper than no fusion at all`
+                : ''}
+              {bestResult.groups?.length > 0
+                ? ` (${bestResult.groups.length} group${bestResult.groups.length === 1 ? '' : 's'}).`
+                : '.'}
             </AlertDescription>
           </Alert>
         ) : (
@@ -149,14 +178,26 @@ export function OptimizePageClient({ params }: OptimizePageClientProps) {
           </TableHeader>
           <TableBody>
             {results.map((result) => (
-              <TableRow key={result.name} className={result.feasible ? 'bg-secondary' : 'text-muted-foreground'}>
-                <TableCell className="font-medium">{result.name}</TableCell>
+              <TableRow
+                key={result.name}
+                className={
+                  result === bestResult
+                    ? 'bg-green-950'
+                    : result.feasible
+                      ? 'bg-secondary'
+                      : 'text-muted-foreground'
+                }
+              >
+                <TableCell className="font-medium">
+                  {result.name}
+                  {result === bestResult && ' ★'}
+                </TableCell>
                 <TableCell>{result.feasible ? '✓ Yes' : '✗ No'}</TableCell>
                 <TableCell className="text-right font-mono">
-                  {result.cost > 0 ? result.cost.toFixed(6) : '-'}
+                  {result.feasible && result.cost > 0 ? result.cost.toFixed(6) : '-'}
                 </TableCell>
                 <TableCell className="text-right font-mono">
-                  {result.latency > 0 ? result.latency : '-'}
+                  {result.feasible && result.latency > 0 ? Math.round(result.latency) : '-'}
                 </TableCell>
                 <TableCell className="text-right font-mono">
                   {result.groups?.length > 0 ? result.groups.length : 'N/A'}

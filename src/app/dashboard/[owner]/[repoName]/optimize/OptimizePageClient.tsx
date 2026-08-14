@@ -9,12 +9,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
+// One fused deployment group. Mirrors FusionGroup in proto/optimizer.proto —
+// the wire format is an object per group, not an array of names.
+interface FusionGroup {
+  function_ids: string[];
+  total_memory_mb: number;
+  total_runtime_ms: number;
+  execution_cost_usd: number;
+}
+
 interface SimulationResult {
   name: string;
   cost: number;
   latency: number;
   feasible: boolean;
-  groups: string[][];
+  groups: FusionGroup[];
   runtime: number;
   error?: string;
 }
@@ -163,6 +172,74 @@ export function OptimizePageClient({ params }: OptimizePageClientProps) {
             <AlertTitle>No Feasible Solution Found</AlertTitle>
             <AlertDescription>None of the algorithms could find a fusion strategy that meets your application's constraints.</AlertDescription>
           </Alert>
+        )}
+
+        {bestResult && bestResult.groups?.length > 0 && (
+          <div className="space-y-3">
+            <div>
+              <h2 className="text-lg font-semibold text-white">Recommended grouping</h2>
+              <p className="text-sm text-muted-foreground">
+                Deploy each group below as a single Lambda. Functions inside a group call
+                each other in-process, so the data passed between them stops crossing the
+                network — that is where the saving comes from.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {bestResult.groups.map((group, i) => {
+                const fused = group.function_ids.length > 1;
+                return (
+                  <div
+                    key={group.function_ids.join('-') || i}
+                    className={`rounded-lg border p-4 ${
+                      fused ? 'border-green-800 bg-green-950/40' : 'border-border bg-secondary'
+                    }`}
+                  >
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-sm font-medium text-white">
+                        {fused ? `Group ${i + 1}` : 'Unchanged'}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {group.function_ids.length} function
+                        {group.function_ids.length === 1 ? '' : 's'}
+                      </span>
+                    </div>
+
+                    <ul className="mt-2 space-y-1">
+                      {group.function_ids.map(id => (
+                        <li key={id} className="font-mono text-sm text-white">
+                          {id}
+                        </li>
+                      ))}
+                    </ul>
+
+                    <dl className="mt-3 border-t border-border pt-2 text-xs text-muted-foreground space-y-1">
+                      <div className="flex justify-between">
+                        <dt>Memory</dt>
+                        <dd className="font-mono">{group.total_memory_mb} MB</dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt>Runtime</dt>
+                        <dd className="font-mono">{group.total_runtime_ms} ms</dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt>Execution cost</dt>
+                        <dd className="font-mono">
+                          ${group.execution_cost_usd.toFixed(8)}
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+                );
+              })}
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Memory is the sum of the members&apos; allocations and runtime assumes they run
+              sequentially, so these are conservative upper bounds — a real fused Lambda
+              allocates roughly the largest member, not the total.
+            </p>
+          </div>
         )}
 
         <Table>

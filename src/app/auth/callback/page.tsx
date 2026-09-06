@@ -1,15 +1,13 @@
 import { Suspense } from 'react';
 import AuthCallbackContent from './auth-callback-context';
+import CloudLoader from '@/components/ui/cloud-loader';
 
 export default function AuthCallback() {
   return (
     <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p>Connecting to GitHub...</p>
-        </div>
-      </div>
+      <main className="sky flex min-h-[calc(100vh-4rem)] items-center justify-center p-6">
+        <CloudLoader label="Connecting to GitHub…" />
+      </main>
     }>
       <AuthCallbackContent />
     </Suspense>

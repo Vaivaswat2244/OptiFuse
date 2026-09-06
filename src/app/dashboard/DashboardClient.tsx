@@ -1,146 +1,210 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { Star, Search } from "lucide-react";
-import ServerLoader from "@/components/ui/server-loader";
+import type React from "react"
+import Link from "next/link"
+import { useEffect, useMemo, useState } from "react"
+import { Star, Search, AlertCircle, FolderGit2, ArrowRight, LogIn } from "lucide-react"
+import CloudLoader from "@/components/ui/cloud-loader"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 interface Repository {
-  id: number;
-  name: string;
-  full_name: string;
-  html_url: string;
-  description: string | null;
-  stargazers_count: number;
+  id: number
+  name: string
+  full_name: string
+  html_url: string
+  description: string | null
+  stargazers_count: number
   owner: {
-    login: string;
-  };
+    login: string
+  }
 }
 
 export function DashboardClient() {
-  const [repos, setRepos] = useState<Repository[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [repos, setRepos] = useState<Repository[]>([])
+  const [searchQuery, setSearchQuery] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  // Distinguishes "no token" from a genuine request failure, so the empty
+  // state can offer a sign-in link instead of a bare error string.
+  const [needsAuth, setNeedsAuth] = useState(false)
 
   useEffect(() => {
-    const style = document.createElement("style");
-    style.innerHTML = `
-      .static-glow {
-        border: 2px solid white !important;
-        box-shadow: 0 0 20px rgba(255, 255, 255, 0.7);
-      }
-    `;
-    document.head.appendChild(style);
-  }, []);
-
-  useEffect(() => {
-    // Make sure this matches exactly what you are saving in localStorage during login!
-    // (In our earlier tests we used 'optifuse_token', make sure this matches)
-    const token = localStorage.getItem("optifuse_api_token") || localStorage.getItem("optifuse_token");
-    const API_URL = process.env.NEXT_PUBLIC_API_URL;
+    const token =
+      localStorage.getItem("optifuse_api_token") || localStorage.getItem("optifuse_token")
+    const API_URL = process.env.NEXT_PUBLIC_API_URL
 
     if (!token) {
-      setError("Not logged in. Please go to the login page.");
-      setLoading(false);
-      return;
+      setNeedsAuth(true)
+      setLoading(false)
+      return
     }
     if (!API_URL) {
-      setError("API URL is not configured.");
-      setLoading(false);
-      return;
+      setError("API URL is not configured.")
+      setLoading(false)
+      return
     }
 
     fetch(`${API_URL}/api/repositories/`, {
       headers: { Authorization: `Token ${token}` },
     })
       .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch repositories from backend.");
-        return res.json();
+        if (!res.ok) throw new Error("Failed to fetch repositories from backend.")
+        return res.json()
       })
       .then((data) => {
-        setRepos(data);
-        setLoading(false);
+        setRepos(data)
+        setLoading(false)
       })
       .catch((err: Error) => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, []);
+        setError(err.message)
+        setLoading(false)
+      })
+  }, [])
 
-  // <-- New filtering logic
-  const filteredRepos = repos.filter((repo) =>
-    repo.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (repo.description && repo.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredRepos = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    if (!query) return repos
+    return repos.filter(
+      (repo) =>
+        repo.name.toLowerCase().includes(query) ||
+        repo.description?.toLowerCase().includes(query)
+    )
+  }, [repos, searchQuery])
 
-  if (loading)
+  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen text-center">
-        <ServerLoader />
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <CloudLoader label="Loading your repositories…" />
       </div>
-    );
+    )
+  }
 
-  if (error)
-    return <div className="p-8 text-center text-red-500">{`Error: ${error}`}</div>;
+  if (needsAuth) {
+    return (
+      <EmptyState
+        icon={LogIn}
+        title="You're not signed in"
+        description="Sign in with GitHub to see the repositories Optifuse can analyse."
+        action={
+          <Button asChild>
+            <Link href="/login">Sign in with GitHub</Link>
+          </Button>
+        }
+      />
+    )
+  }
+
+  if (error) {
+    return (
+      <main className="mx-auto max-w-2xl px-4 py-16 sm:px-6">
+        <Alert variant="destructive">
+          <AlertCircle />
+          <AlertTitle>Couldn&apos;t load your repositories</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </main>
+    )
+  }
 
   return (
-    <div className="min-h-screen font-sans">
-      <div className="container mx-auto p-8">
-        <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
-          <h1 className="text-3xl font-bold text-[#e6edf3]">Your Repositories</h1>
-
-          <div className="relative w-full max-w-sm md:w-80 md:ml-auto">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8b949e] w-4 h-4 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Find a repository..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)} // <-- Update state on type
-              className="w-full bg-[#161b22] text-[#e6edf3] border border-[#495057] rounded-lg py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-[#2d8cff] placeholder:text-[#8b949e]"
-            />
-          </div>
+    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Your repositories</h1>
+          <p className="mt-1.5 text-muted-foreground">
+            Pick a repository with a <code className="font-mono text-sm">serverless.yml</code> to
+            analyse.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {/* Use the filtered array here instead of the raw repos array */}
+        <div className="relative w-full sm:w-72">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Find a repository…"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            className="bg-card pl-9"
+            aria-label="Find a repository"
+          />
+        </div>
+      </div>
+
+      {repos.length === 0 ? (
+        <EmptyState
+          icon={FolderGit2}
+          title="No repositories yet"
+          description="Optifuse couldn't find any repositories on your GitHub account."
+        />
+      ) : filteredRepos.length === 0 ? (
+        <EmptyState
+          icon={Search}
+          title="No matches"
+          description={`Nothing matches "${searchQuery}". Try a different search.`}
+          action={
+            <Button variant="outline" onClick={() => setSearchQuery("")}>
+              Clear search
+            </Button>
+          }
+        />
+      ) : (
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {filteredRepos.map((repo) => (
-            <div
+            <article
               key={repo.id}
-              className="bg-[#161b22] rounded-xl border p-8 flex flex-col justify-between shadow-lg hover:border-white transition-all duration-300 transform hover:-translate-y-1"
+              className="group flex flex-col rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-lg hover:shadow-orange-900/5"
             >
-              <div>
-                <h2 className="text-2xl font-semibold text-[#e6edf3] font-mono">
+              <div className="flex-1">
+                <h2 className="font-mono text-lg font-semibold tracking-tight text-foreground">
                   {repo.name}
                 </h2>
-                <p className="text-base text-[#8b949e] mb-4">{repo.full_name}</p>
-                <p className="text-base text-[#8b949e] mb-4 line-clamp-3">
+                <p className="mt-0.5 truncate text-sm text-muted-foreground">{repo.full_name}</p>
+                <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
                   {repo.description || "No description provided."}
                 </p>
               </div>
-              <div className="flex justify-between items-center mt-6">
-                <div className="flex items-center text-[#8b949e] text-base">
-                  <Star className="text-yellow-500 mr-1 h-4 w-4" />
-                  <span>{repo.stargazers_count}</span>
-                </div>
-                <Link
-                  href={`/dashboard/${repo.owner.login}/${repo.name}`}
-                  className="bg-[#2d8cff] text-white px-4 py-2 rounded-lg hover:bg-[#58a6ff] transition-colors text-base"
-                >
-                  View Details
-                </Link>
+
+              <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
+                <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <Star className="h-4 w-4 fill-orange-400 text-orange-400" />
+                  {repo.stargazers_count}
+                </span>
+                <Button asChild size="sm" className="group/btn">
+                  <Link href={`/dashboard/${repo.owner.login}/${repo.name}`}>
+                    Analyse
+                    <ArrowRight className="transition-transform group-hover/btn:translate-x-0.5" />
+                  </Link>
+                </Button>
               </div>
-            </div>
+            </article>
           ))}
-          
-          {/* Quick empty state if they search for something that doesn't exist */}
-          {filteredRepos.length === 0 && (
-             <div className="col-span-full text-center text-[#8b949e] py-12">
-               No repositories match your search.
-             </div>
-          )}
         </div>
-      </div>
+      )}
+    </main>
+  )
+}
+
+function EmptyState({
+  icon: Icon,
+  title,
+  description,
+  action,
+}: {
+  icon: React.ElementType
+  title: string
+  description: string
+  action?: React.ReactNode
+}) {
+  return (
+    <div className="flex min-h-[50vh] flex-col items-center justify-center px-4 text-center">
+      <span className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary text-primary">
+        <Icon className="h-6 w-6" />
+      </span>
+      <h2 className="text-xl font-semibold">{title}</h2>
+      <p className="mt-2 max-w-sm text-muted-foreground">{description}</p>
+      {action && <div className="mt-6">{action}</div>}
     </div>
-  );
+  )
 }

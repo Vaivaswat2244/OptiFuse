@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import CloudLoader from '@/components/ui/cloud-loader';
 
 interface AuthResponse {
   username: string;
@@ -47,27 +51,24 @@ export default function AuthCallbackContent() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center text-red-600">
-          <h2 className="text-xl font-semibold mb-2">Authentication Error</h2>
-          <p>{error}</p>
-          <button 
-            onClick={() => router.push('/login')}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Return to Login
-          </button>
+      <main className="sky flex min-h-[calc(100vh-4rem)] items-center justify-center p-6">
+        <div className="w-full max-w-sm space-y-5">
+          <Alert variant="destructive">
+            <AlertCircle />
+            <AlertTitle>Authentication error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+          <Button className="w-full" onClick={() => router.push('/login')}>
+            Return to sign in
+          </Button>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p>Authenticating with Optifuse...</p>
-      </div>
-    </div>
+    <main className="sky flex min-h-[calc(100vh-4rem)] items-center justify-center p-6">
+      <CloudLoader label="Authenticating with Optifuse…" />
+    </main>
   );
 }

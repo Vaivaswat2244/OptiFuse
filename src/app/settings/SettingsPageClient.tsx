@@ -163,11 +163,16 @@ export function SettingsPageClient() {
 
   return (
     <main className="container mx-auto p-4 sm:p-8 max-w-4xl">
-      <h1 className="text-3xl font-bold tracking-tight mb-8">AWS Integration Settings</h1>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">AWS integration</h1>
+        <p className="mt-2 text-muted-foreground">
+          Grant Optifuse read-only access to your X-Ray traces and CloudWatch metrics.
+        </p>
+      </div>
       
       {profile?.aws_role_arn && (
-        <Alert variant="default" className="mb-6 bg-green-950/50 border-green-800 text-green-300">
-          <CheckCircle className="h-4 w-4 text-green-400" />
+        <Alert variant="default" className="mb-6 border-emerald-200 bg-emerald-50 text-emerald-900">
+          <CheckCircle className="h-4 w-4 text-emerald-600" />
           <AlertTitle>AWS Account Connected</AlertTitle>
           <AlertDescription>
             Optifuse is connected to your AWS account. You can now run live analyses.
@@ -183,33 +188,39 @@ export function SettingsPageClient() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
-          <div className="space-y-3 p-4 border rounded-lg">
-            <h3 className="font-semibold text-lg">Step 1: Get Your Connection Details</h3>
+          <div className="space-y-3 rounded-xl border border-border bg-muted/30 p-5">
+            <h3 className="flex items-center gap-2.5 text-lg font-semibold">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">1</span>
+              Get Your Connection Details
+            </h3>
             <p className="text-sm text-muted-foreground">You will need these two values to create the secure connection in AWS.</p>
             <div className="space-y-2 pt-2">
               <Label>Optifuse AWS Account ID</Label>
-              <Input readOnly value={YOUR_OPTIFUSE_AWS_ACCOUNT_ID} className="font-mono bg-secondary" />
+              <Input readOnly value={YOUR_OPTIFUSE_AWS_ACCOUNT_ID} className="bg-secondary font-mono" />
             </div>
             <div className="space-y-2">
               <Label>Your Unique External ID</Label>
               <div className="flex items-center gap-2">
-                <Input readOnly value={profile?.aws_external_id || 'Loading...'} className="font-mono bg-secondary" />
+                <Input readOnly value={profile?.aws_external_id || 'Loading...'} className="bg-secondary font-mono" />
                 <Button variant="outline" size="icon" onClick={() => handleCopy(profile!.aws_external_id, 'extId')}>
-                  {isExtIdCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                  {isExtIdCopied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
           </div>
 
-          <div className="space-y-3 p-4 border rounded-lg">
-            <h3 className="font-semibold text-lg">Step 2: Create and Deploy the IAM Role in AWS</h3>
+          <div className="space-y-3 rounded-xl border border-border bg-muted/30 p-5">
+            <h3 className="flex items-center gap-2.5 text-lg font-semibold">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">2</span>
+              Create and Deploy the IAM Role in AWS
+            </h3>
             <p className="text-sm text-muted-foreground">Save the template below as a file (e.g., `optifuse-template.yml`), then upload it in the AWS CloudFormation console.</p>
             <div className="relative">
-              <pre className="p-4 bg-muted rounded-md overflow-x-auto text-xs max-h-40 whitespace-pre-wrap">
+              <pre className="max-h-48 overflow-x-auto whitespace-pre-wrap rounded-xl border border-border bg-muted/60 p-4 text-xs leading-relaxed text-foreground">
                 <code>{CLOUDFORMATION_TEMPLATE}</code>
               </pre>
               <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => handleCopy(CLOUDFORMATION_TEMPLATE, 'template')}>
-                {isTemplateCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                {isTemplateCopied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
             <div className="flex items-center gap-2 mt-2">
@@ -225,8 +236,11 @@ export function SettingsPageClient() {
             </div>
           </div>
 
-          <div className="space-y-3 p-4 border rounded-lg">
-            <h3 className="font-semibold text-lg">Step 3: Save Your New Role ARN</h3>
+          <div className="space-y-3 rounded-xl border border-border bg-muted/30 p-5">
+            <h3 className="flex items-center gap-2.5 text-lg font-semibold">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">3</span>
+              Save Your New Role ARN
+            </h3>
             <p className="text-sm text-muted-foreground">After the stack is created, find the `RoleArn` in the Outputs tab, paste it here, and save.</p>
             <form onSubmit={handleSubmit} className="space-y-4 pt-2">
               <div className="space-y-2">
@@ -255,17 +269,17 @@ function SettingsPageSkeleton() {
           <Skeleton className="h-4 w-full mt-2" />
         </CardHeader>
         <CardContent className="space-y-8">
-          <div className="space-y-3 p-4 border rounded-lg">
+          <div className="space-y-3 rounded-xl border border-border bg-muted/30 p-5">
             <Skeleton className="h-6 w-1/3 mb-2" />
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full mt-2" />
           </div>
-          <div className="space-y-3 p-4 border rounded-lg">
+          <div className="space-y-3 rounded-xl border border-border bg-muted/30 p-5">
             <Skeleton className="h-6 w-1/3 mb-2" />
             <Skeleton className="h-32 w-full" />
             <Skeleton className="h-10 w-48 mt-2" />
           </div>
-          <div className="space-y-3 p-4 border rounded-lg">
+          <div className="space-y-3 rounded-xl border border-border bg-muted/30 p-5">
              <Skeleton className="h-6 w-1/3 mb-2" />
              <Skeleton className="h-10 w-full" />
              <Skeleton className="h-10 w-32 mt-4" />

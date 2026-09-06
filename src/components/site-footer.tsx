@@ -52,6 +52,11 @@ export function SiteFooter() {
             <h3 className="mb-4 text-sm font-semibold text-foreground">Resources</h3>
             <ul className="space-y-2.5 text-sm">
               <li>
+                <Link href="/architecture" className="text-muted-foreground transition-colors hover:text-primary">
+                  Architecture
+                </Link>
+              </li>
+              <li>
                 <a
                   href="https://github.com/Vaivaswat2244/OptiFuse"
                   target="_blank"

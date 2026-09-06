@@ -1,424 +1,391 @@
 "use client"
 
+import type React from "react"
 import Link from "next/link"
+import { useEffect, useRef } from "react"
+import {
+  ArrowRight,
+  Cloud,
+  DollarSign,
+  GitBranch,
+  Layers,
+  LineChart,
+  Network,
+  ShieldCheck,
+  Zap,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowRight, Server, BarChart3, Shield, Clock, Code, TrendingUp } from "lucide-react"
-import { useEffect, useState } from "react"
+import { SiteFooter } from "@/components/site-footer"
+
+const FEATURES = [
+  {
+    icon: LineChart,
+    title: "Real invocation data",
+    description:
+      "Reads your actual X-Ray traces and CloudWatch metrics, so the model reflects how your functions behave in production, not a guess from static code.",
+  },
+  {
+    icon: Layers,
+    title: "Several strategies, compared",
+    description:
+      "Runs multiple fusion algorithms over the same workload and puts their cost, latency and feasibility side by side so you can see the trade-off.",
+  },
+  {
+    icon: DollarSign,
+    title: "Costed per group",
+    description:
+      "Every proposed group carries its own memory, runtime and execution cost, so a recommendation is something you can check rather than take on faith.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Constraint aware",
+    description:
+      "Groupings that would breach your memory ceilings or latency budgets are marked infeasible instead of being quietly recommended.",
+  },
+  {
+    icon: GitBranch,
+    title: "Straight from your repo",
+    description:
+      "Point Optifuse at a repository and it reads the serverless.yml already there. No new config file to maintain alongside it.",
+  },
+  {
+    icon: Network,
+    title: "Names, not just numbers",
+    description:
+      "The result tells you exactly which functions to merge into which Lambda: a change you can go and make, not an abstract score.",
+  },
+]
+
+const STEPS = [
+  {
+    step: "01",
+    title: "Connect your repository",
+    description:
+      "Sign in with GitHub and pick a repo. Optifuse finds the serverless.yml and reads your function topology from it.",
+  },
+  {
+    step: "02",
+    title: "Link your AWS account",
+    description:
+      "Deploy a read-only IAM role from the template we generate. Optifuse can see X-Ray and CloudWatch data, nothing else.",
+  },
+  {
+    step: "03",
+    title: "Run the analysis",
+    description:
+      "Get the cheapest grouping that still meets your constraints, with the exact functions to fuse and what each group will cost.",
+  },
+]
 
 export default function LandingPage() {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const skyRef = useRef<HTMLDivElement>(null)
+  const pointer = useRef({ x: 0, y: 0 })
+  const frame = useRef(0)
 
+  /*
+    Parallax writes --mx / --my straight onto the DOM node inside a rAF.
+    The previous version held the pointer position in useState, which made
+    every mousemove re-render the whole page; here React never re-renders and
+    the CSS transform does the work on the compositor.
+  */
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({
-        x: (e.clientX / window.innerWidth) * 100,
-        y: (e.clientY / window.innerHeight) * 100,
+    const el = skyRef.current
+    if (!el) return
+
+    const onMove = (event: MouseEvent) => {
+      pointer.current = {
+        x: (event.clientX / window.innerWidth) * 2 - 1,
+        y: (event.clientY / window.innerHeight) * 2 - 1,
+      }
+      if (frame.current) return
+      frame.current = requestAnimationFrame(() => {
+        frame.current = 0
+        el.style.setProperty("--mx", pointer.current.x.toFixed(3))
+        el.style.setProperty("--my", pointer.current.y.toFixed(3))
       })
     }
 
-    window.addEventListener("mousemove", handleMouseMove)
-    return () => window.removeEventListener("mousemove", handleMouseMove)
+    window.addEventListener("mousemove", onMove, { passive: true })
+    return () => {
+      window.removeEventListener("mousemove", onMove)
+      if (frame.current) cancelAnimationFrame(frame.current)
+    }
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1b2735] to-[#090a0f] text-white relative overflow-hidden">
-      {/* Background animations and effects */}
-      <div className="absolute inset-0 opacity-8">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(71, 85, 105, 0.3) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(71, 85, 105, 0.3) 1px, transparent 1px),
-              linear-gradient(rgba(100, 116, 139, 0.2) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(100, 116, 139, 0.2) 1px, transparent 1px)
-            `,
-            backgroundSize: "100px 100px, 100px 100px, 20px 20px, 20px 20px",
-            transform: `translate(${mousePosition.x * 0.01}px, ${mousePosition.y * 0.01}px)`,
-            transition: "transform 0.3s ease-out",
-          }}
-        />
-        {/* Circuit nodes */}
-        <div
-          className="absolute top-20 left-20 w-2 h-2 bg-slate-400/60 rounded-full shadow-lg shadow-slate-400/30"
-          style={{
-            transform: `translate(${mousePosition.x * 0.03}px, ${mousePosition.y * 0.02}px)`,
-            transition: "transform 0.4s ease-out",
-          }}
-        />
-        <div
-          className="absolute top-40 right-32 w-1.5 h-1.5 bg-slate-300/70 rounded-full shadow-lg shadow-slate-300/40"
-          style={{
-            transform: `translate(${-mousePosition.x * 0.02}px, ${mousePosition.y * 0.03}px)`,
-            transition: "transform 0.5s ease-out",
-          }}
-        />
-        <div
-          className="absolute bottom-32 left-1/3 w-2.5 h-2.5 bg-slate-500/50 rounded-full shadow-lg shadow-slate-500/25"
-          style={{
-            transform: `translate(${mousePosition.x * 0.025}px, ${-mousePosition.y * 0.02}px)`,
-            transition: "transform 0.45s ease-out",
-          }}
-        />
-      </div>
+    <div className="overflow-hidden">
+      {/* ---------------------------------------------------------------- Hero */}
+      <section ref={skyRef} className="sky relative">
+        {/* Cloud layer. Each mass sets its own --depth so nearer clouds
+            travel further with the pointer than distant ones. */}
+        <div className="pointer-events-none absolute inset-0" aria-hidden>
+          <div
+            className="cloud parallax animate-drift left-[-6%] top-[8%] h-56 w-[26rem] bg-white/80"
+            style={{ ["--depth" as string]: "26px" }}
+          />
+          <div
+            className="cloud parallax animate-drift left-[58%] top-[4%] h-64 w-[32rem] bg-white/70 animation-delay-2000"
+            style={{ ["--depth" as string]: "18px" }}
+          />
+          <div
+            className="cloud parallax animate-drift left-[24%] top-[46%] h-48 w-[24rem] bg-orange-100/70 animation-delay-1000"
+            style={{ ["--depth" as string]: "34px" }}
+          />
+          <div
+            className="cloud parallax left-[76%] top-[54%] h-40 w-[20rem] bg-orange-200/40"
+            style={{ ["--depth" as string]: "12px" }}
+          />
+        </div>
 
-      <div
-        className="absolute inset-0 opacity-15"
-        style={{
-          background: `radial-gradient(1000px circle at ${mousePosition.x}% ${mousePosition.y}%, rgba(71, 85, 105, 0.12), transparent 60%)`,
-          transition: "background 0.4s ease-out",
-        }}
-      />
-      <div
-        className="absolute inset-0 opacity-10"
-        style={{
-          background: `radial-gradient(800px circle at ${100 - mousePosition.x}% ${100 - mousePosition.y}%, rgba(100, 116, 139, 0.08), transparent 60%)`,
-          transition: "background 0.4s ease-out",
-        }}
-      />
-
-      <div
-        className="absolute top-16 left-8 w-16 h-0.5 bg-gradient-to-r from-slate-400/40 to-transparent animate-pulse"
-        style={{
-          transform: `translate(${mousePosition.x * 0.04}px, ${mousePosition.y * 0.02}px)`,
-          transition: "transform 0.6s ease-out",
-        }}
-      />
-      <div
-        className="absolute top-32 right-16 w-0.5 h-12 bg-gradient-to-b from-slate-300/50 to-transparent animate-pulse"
-        style={{
-          transform: `translate(${-mousePosition.x * 0.03}px, ${mousePosition.y * 0.04}px)`,
-          transition: "transform 0.7s ease-out",
-          animationDelay: "1s",
-        }}
-      />
-      <div
-        className="absolute bottom-40 left-1/4 w-12 h-0.5 bg-gradient-to-r from-transparent via-slate-400/35 to-transparent animate-pulse"
-        style={{
-          transform: `translate(${mousePosition.x * 0.035}px, ${-mousePosition.y * 0.03}px)`,
-          transition: "transform 0.5s ease-out",
-        }}
-      />
-      <div
-        className="absolute top-60 right-1/3 w-0.5 h-8 bg-gradient-to-b from-slate-500/30 to-transparent animate-pulse"
-        style={{
-          transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.025}px)`,
-          transition: "transform 0.8s ease-out",
-          animationDelay: "2s",
-        }}
-      />
-      <div
-        className="absolute bottom-20 right-12 w-8 h-0.5 bg-gradient-to-r from-slate-300/40 to-transparent animate-pulse"
-        style={{
-          transform: `translate(${-mousePosition.x * 0.025}px, ${-mousePosition.y * 0.02}px)`,
-          transition: "transform 0.6s ease-out",
-        }}
-      />
-
-      {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 relative z-10">
-          <div className="text-center">
-            {/* Animated Badge */}
+        <div className="relative mx-auto max-w-7xl px-4 pb-24 pt-20 sm:px-6 lg:px-8 lg:pt-28">
+          <div className="mx-auto max-w-3xl text-center">
             <div className="animate-fade-in-up">
-              <Badge className="mb-6 bg-gradient-to-r from-slate-600/20 to-slate-700/20 text-slate-300 border-slate-500/30">
-                <Server className="w-3 h-3 mr-1" />
-                Optimize Your Serverless Functions
+              <Badge
+                variant="secondary"
+                className="mb-6 gap-1.5 border-orange-200 bg-white/70 px-3 py-1.5 text-primary backdrop-blur"
+              >
+                <Cloud className="h-3.5 w-3.5" />
+                Serverless cost optimisation
               </Badge>
             </div>
 
-            {/* Main Heading with Signature Animation */}
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-fade-in-up animation-delay-200">
-              <span className="bg-gradient-to-r from-white via-slate-100 to-slate-200 bg-clip-text text-transparent">
-                Supercharge Your
-              </span>
+            <h1 className="animate-fade-in-up animation-delay-200 text-balance text-5xl font-bold tracking-tight text-foreground md:text-6xl lg:text-7xl">
+              Fuse your functions.
               <br />
-              <span className="relative">
-                <span className="bg-gradient-to-r from-slate-300 to-slate-400 bg-clip-text text-transparent animate-pulse">
-                  Lambda Functions
+              <span className="relative inline-block">
+                <span className="bg-gradient-to-r from-orange-500 to-orange-700 bg-clip-text text-transparent">
+                  Shrink your bill.
                 </span>
-                {/* Signature underline animation */}
-                <div className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-slate-400 to-slate-500 transform scale-x-0 animate-scale-x origin-left"></div>
+                <span className="absolute -bottom-1 left-0 h-1 w-full origin-left animate-scale-x rounded-full bg-gradient-to-r from-orange-400 to-orange-600" />
               </span>
             </h1>
 
-            <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto animate-fade-in-up animation-delay-400">
-              Automatically optimize your serverless functions for better performance, lower costs, and enhanced
-              reliability. Get insights, recommendations, and automated optimizations through advanced analysis.
+            <p className="animate-fade-in-up animation-delay-400 mx-auto mt-7 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground">
+              Every hop between two Lambdas costs you a cold start and a network
+              round trip. Optifuse works out which of your functions are cheaper
+              deployed together, and shows you exactly which ones to merge.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up animation-delay-600">
-              <Link href='/login'>
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white border-0 group"
-              >
-                Get Started Free
-                <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <div className="animate-fade-in-up animation-delay-600 mt-9 flex flex-col justify-center gap-3 sm:flex-row">
+              <Button asChild size="lg" className="group shadow-sm shadow-orange-600/20">
+                <Link href="/login">
+                  Get started free
+                  <ArrowRight className="transition-transform group-hover:translate-x-0.5" />
+                </Link>
               </Button>
-              </Link>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white/20 text-white hover:bg-white/10 bg-transparent"
-              >
-                Watch Demo
+              <Button asChild size="lg" variant="outline" className="bg-white/70 backdrop-blur">
+                <Link href="#how-it-works">See how it works</Link>
               </Button>
             </div>
+
+            <p className="animate-fade-in-up animation-delay-800 mt-6 text-sm text-muted-foreground">
+              Works with AWS Lambda, the Serverless Framework, X-Ray and CloudWatch.
+            </p>
           </div>
 
-          <div
-            className="absolute top-20 left-10 w-20 h-12 bg-slate-600/15 border border-slate-500/20 animate-pulse transition-transform duration-1000 ease-out"
-            style={{
-              transform: `translate(${mousePosition.x * 0.08}px, ${mousePosition.y * 0.06}px)`,
-              borderRadius: "4px",
-              boxShadow: "inset 0 0 10px rgba(71, 85, 105, 0.3)",
-            }}
-          >
-            <div className="absolute top-1 left-1 right-1 h-2 bg-slate-500/30 rounded-sm"></div>
-            <div className="absolute top-4 left-1 right-1 h-2 bg-slate-400/25 rounded-sm"></div>
-            <div className="absolute top-7 left-1 right-1 h-2 bg-slate-500/20 rounded-sm"></div>
-          </div>
-
-          <div
-            className="absolute top-40 right-20 w-16 h-10 bg-slate-700/12 border border-slate-600/15 animate-pulse animation-delay-1000 transition-transform duration-1000 ease-out"
-            style={{
-              transform: `translate(${-mousePosition.x * 0.06}px, ${mousePosition.y * 0.08}px)`,
-              borderRadius: "4px",
-              boxShadow: "inset 0 0 8px rgba(100, 116, 139, 0.25)",
-            }}
-          >
-            <div className="absolute top-1 left-1 right-1 h-1.5 bg-slate-600/25 rounded-sm"></div>
-            <div className="absolute top-3.5 left-1 right-1 h-1.5 bg-slate-500/20 rounded-sm"></div>
-            <div className="absolute top-6 left-1 right-1 h-1.5 bg-slate-600/15 rounded-sm"></div>
-          </div>
-
-          <div
-            className="absolute bottom-20 left-1/4 w-18 h-8 bg-slate-500/10 border border-slate-400/12 animate-pulse animation-delay-2000 transition-transform duration-1200 ease-out"
-            style={{
-              transform: `translate(${mousePosition.x * 0.04}px, ${-mousePosition.y * 0.05}px)`,
-              borderRadius: "4px",
-              boxShadow: "inset 0 0 6px rgba(148, 163, 184, 0.2)",
-            }}
-          >
-            <div className="absolute top-1 left-1 right-1 h-1 bg-slate-400/20 rounded-sm"></div>
-            <div className="absolute top-3 left-1 right-1 h-1 bg-slate-500/15 rounded-sm"></div>
-            <div className="absolute top-5 left-1 right-1 h-1 bg-slate-400/10 rounded-sm"></div>
-          </div>
-
-          <div
-            className="absolute top-60 right-1/3 w-14 h-6 bg-slate-600/8 border border-slate-500/10 animate-pulse animation-delay-3000 transition-transform duration-1100 ease-out"
-            style={{
-              transform: `translate(${mousePosition.x * 0.03}px, ${mousePosition.y * 0.04}px)`,
-              borderRadius: "4px",
-              boxShadow: "inset 0 0 5px rgba(71, 85, 105, 0.15)",
-            }}
-          >
-            <div className="absolute top-0.5 left-0.5 right-0.5 h-1 bg-slate-500/15 rounded-sm"></div>
-            <div className="absolute top-2.5 left-0.5 right-0.5 h-1 bg-slate-400/10 rounded-sm"></div>
-          </div>
-
-          <div
-            className="absolute bottom-40 right-10 w-22 h-10 bg-slate-700/8 border border-slate-600/8 animate-pulse animation-delay-4000 transition-transform duration-1100 ease-out"
-            style={{
-              transform: `translate(${-mousePosition.x * 0.04}px, ${-mousePosition.y * 0.06}px)`,
-              borderRadius: "4px",
-              boxShadow: "inset 0 0 8px rgba(100, 116, 139, 0.12)",
-            }}
-          >
-            <div className="absolute top-1 left-1 right-1 h-1.5 bg-slate-600/12 rounded-sm"></div>
-            <div className="absolute top-3.5 left-1 right-1 h-1.5 bg-slate-500/8 rounded-sm"></div>
-            <div className="absolute top-6 left-1 right-1 h-1.5 bg-slate-600/6 rounded-sm"></div>
+          <div className="animate-fade-in-up animation-delay-800 mt-16">
+            <FusionDiagram />
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-24 relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 animate-fade-in-up">
-              <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                Why Choose Optifuse?
-              </span>
-            </h2>
-            <p className="text-gray-400 text-lg animate-fade-in-up animation-delay-200">
-              Advanced optimization techniques that make your serverless functions faster and more cost-effective
+      {/* -------------------------------------------------------- How it works */}
+      <section id="how-it-works" className="scroll-mt-20 border-t border-border bg-white py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-4xl font-bold tracking-tight">Three steps to a smaller bill</h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Read-only throughout. Optifuse never deploys anything to your account.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                icon: <BarChart3 className="w-8 h-8" />,
-                title: "Performance Analytics",
-                description: "Real-time monitoring and detailed performance metrics for all your lambda functions",
-              },
-              {
-                icon: <Shield className="w-8 h-8" />,
-                title: "Smart Optimization",
-                description: "Intelligent recommendations to reduce cold starts and improve execution efficiency",
-              },
-              {
-                icon: <Clock className="w-8 h-8" />,
-                title: "Cost Reduction",
-                description: "Automatically optimize memory allocation and execution time to minimize AWS costs",
-              },
-              {
-                icon: <Code className="w-8 h-8" />,
-                title: "Code Analysis",
-                description: "Deep code analysis to identify bottlenecks and suggest performance improvements",
-              },
-              {
-                icon: <TrendingUp className="w-8 h-8" />,
-                title: "Scalability Insights",
-                description: "Understand how your functions perform under different load conditions",
-              },
-              {
-                icon: <Server className="w-8 h-8" />,
-                title: "Instant Deployment",
-                description: "Deploy optimized versions of your functions with a single click",
-              },
-            ].map((feature, index) => (
-              <Card
-                key={index}
-                className="bg-white/5 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300 animate-fade-in-up group cursor-pointer"
-                style={{
-                  animationDelay: `${index * 100 + 400}ms`,
-                  transform: `perspective(1000px) rotateX(${(mousePosition.y - 50) * 0.05}deg) rotateY(${(mousePosition.x - 50) * 0.05}deg)`,
-                  transition: "transform 0.3s ease-out",
-                }}
+          <div className="mt-14 grid gap-6 md:grid-cols-3">
+            {STEPS.map((item) => (
+              <div
+                key={item.step}
+                className="relative rounded-2xl border border-border bg-background p-7 transition-shadow hover:shadow-md hover:shadow-orange-900/5"
               >
-                <CardContent className="p-6">
-                  <div className="text-slate-300 mb-4 group-hover:scale-110 transition-transform duration-300">
-                    {feature.icon}
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2 text-white">{feature.title}</h3>
-                  <p className="text-gray-400">{feature.description}</p>
-                </CardContent>
-              </Card>
+                <span className="text-sm font-mono font-semibold text-primary">{item.step}</span>
+                <h3 className="mt-3 text-xl font-semibold">{item.title}</h3>
+                <p className="mt-2.5 leading-relaxed text-muted-foreground">{item.description}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 relative z-10">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="bg-gradient-to-r from-slate-600/20 to-slate-700/20 rounded-2xl p-12 border border-white/10 backdrop-blur-sm animate-fade-in-up">
-            <h2 className="text-4xl font-bold mb-4">
-              <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                Ready to Optimize?
-              </span>
+      {/* ------------------------------------------------------------ Features */}
+      <section className="py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-4xl font-bold tracking-tight">
+              Recommendations you can actually check
             </h2>
-            <p className="text-gray-300 text-lg mb-8">
-              Join thousands of developers who have already improved their serverless performance
+            <p className="mt-4 text-lg text-muted-foreground">
+              Optimisation advice is only useful if you can see where it came from.
             </p>
-            <Link href="/login">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white border-0 group"
+          </div>
+
+          <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((feature) => (
+              <div
+                key={feature.title}
+                className="group rounded-2xl border border-border bg-white p-7 transition-all duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-lg hover:shadow-orange-900/5"
               >
-                Start Optimizing Now
-                <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </Link>
+                <span className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                  <feature.icon className="h-5 w-5" />
+                </span>
+                <h3 className="text-lg font-semibold">{feature.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {feature.description}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-white/10 py-12 relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div className="col-span-2">
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-r from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
-                  <Server className="w-5 h-5 text-slate-200" />
-                </div>
-                <span className="text-xl font-bold">Optifuse</span>
-              </div>
-              <p className="text-gray-400 mb-4 max-w-md">
-                Optimize your serverless Lambda functions for better performance, lower costs, and enhanced reliability.
+      {/* ----------------------------------------------------------------- CTA */}
+      <section className="pb-24">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+          <div className="relative overflow-hidden rounded-3xl border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-100 px-8 py-16 text-center">
+            <div className="cloud animate-drift left-[-4%] top-[-20%] h-48 w-96 bg-white/70" aria-hidden />
+            <div
+              className="cloud animate-drift animation-delay-2000 left-[70%] top-[50%] h-40 w-80 bg-orange-200/50"
+              aria-hidden
+            />
+            <div className="relative">
+              <span className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 shadow-md shadow-orange-600/25">
+                <Zap className="h-6 w-6 text-white" />
+              </span>
+              <h2 className="text-4xl font-bold tracking-tight">Ready to see the numbers?</h2>
+              <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
+                Connect a repository and run your first analysis. It takes a GitHub
+                sign-in and a read-only IAM role.
               </p>
-              <div className="flex space-x-4">
-                <a href="mailto:contact@optifuse.com" className="text-gray-400 hover:text-white transition-colors">
-                  contact@optifuse.com
-                </a>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-white font-semibold mb-4">Product</h3>
-              <ul className="space-y-2">
-                <li>
-                  <Link href="/dashboard" className="text-gray-400 hover:text-white transition-colors">
-                    Dashboard
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/features" className="text-gray-400 hover:text-white transition-colors">
-                    Features
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/pricing" className="text-gray-400 hover:text-white transition-colors">
-                    Pricing
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/integrations" className="text-gray-400 hover:text-white transition-colors">
-                    Integrations
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="text-white font-semibold mb-4">Support</h3>
-              <ul className="space-y-2">
-                <li>
-                  <Link href="/help" className="text-gray-400 hover:text-white transition-colors">
-                    Help Center
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/docs" className="text-gray-400 hover:text-white transition-colors">
-                    Documentation
-                  </Link>
-                </li>
-                <li>
-                  <a href="mailto:support@optifuse.com" className="text-gray-400 hover:text-white transition-colors">
-                    Contact Support
-                  </a>
-                </li>
-                <li>
-                  <Link href="/about" className="text-gray-400 hover:text-white transition-colors">
-                    About Us
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400 mb-4 md:mb-0">© 2025 Optifuse. All rights reserved.</p>
-            <div className="flex space-x-6">
-              <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors text-sm">
-                Privacy Policy
-              </Link>
-              <Link href="/terms" className="text-gray-400 hover:text-white transition-colors text-sm">
-                Terms of Service
-              </Link>
-              <a href="mailto:legal@optifuse.com" className="text-gray-400 hover:text-white transition-colors text-sm">
-                Legal
-              </a>
+              <Button asChild size="lg" className="group mt-8 shadow-sm shadow-orange-600/20">
+                <Link href="/login">
+                  Start optimising
+                  <ArrowRight className="transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </Button>
             </div>
           </div>
         </div>
-      </footer>
+      </section>
+
+      <SiteFooter />
     </div>
+  )
+}
+
+/* -------------------------------------------------------------------------- */
+
+/*
+  Before/after illustration of what the product does. Built from real elements
+  rather than an image so the function names stay selectable and the whole
+  thing reflows on small screens.
+*/
+function FusionDiagram() {
+  return (
+    <div className="mx-auto max-w-5xl rounded-3xl border border-orange-200/70 bg-white/80 p-4 shadow-xl shadow-orange-900/5 backdrop-blur sm:p-6">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <DiagramPanel
+          label="Before"
+          caption="4 invocations · 3 network hops"
+          tone="muted"
+        >
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <FnPill name="auth" />
+            <Hop />
+            <FnPill name="fetch" />
+            <Hop />
+            <FnPill name="transform" />
+            <Hop />
+            <FnPill name="store" />
+          </div>
+        </DiagramPanel>
+
+        <DiagramPanel
+          label="After"
+          caption="2 invocations · 0 network hops"
+          tone="accent"
+        >
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5 rounded-xl border-2 border-dashed border-orange-400 bg-orange-50 p-2">
+              <FnPill name="auth" fused />
+              <FnPill name="fetch" fused />
+              <FnPill name="transform" fused />
+            </div>
+            <Hop />
+            <FnPill name="store" />
+          </div>
+        </DiagramPanel>
+      </div>
+    </div>
+  )
+}
+
+function DiagramPanel({
+  label,
+  caption,
+  tone,
+  children,
+}: {
+  label: string
+  caption: string
+  tone: "muted" | "accent"
+  children: React.ReactNode
+}) {
+  return (
+    <div
+      className={`rounded-2xl border p-5 ${
+        tone === "accent" ? "border-orange-200 bg-orange-50/50" : "border-border bg-muted/40"
+      }`}
+    >
+      <div className="mb-4 flex items-baseline justify-between">
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </span>
+        <span
+          className={`text-xs font-medium ${
+            tone === "accent" ? "text-primary" : "text-muted-foreground"
+          }`}
+        >
+          {caption}
+        </span>
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function FnPill({ name, fused = false }: { name: string; fused?: boolean }) {
+  return (
+    <span
+      className={`rounded-lg border px-2.5 py-1.5 font-mono text-xs font-medium ${
+        fused
+          ? "border-orange-300 bg-white text-primary"
+          : "border-border bg-white text-foreground shadow-sm"
+      }`}
+    >
+      {name}
+    </span>
+  )
+}
+
+/* A network hop between two functions. This is what fusion removes. */
+function Hop() {
+  return (
+    <svg width="22" height="8" viewBox="0 0 22 8" fill="none" aria-hidden className="shrink-0">
+      <path
+        d="M0 4h22"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeDasharray="4 4"
+        className="animate-dash-flow text-orange-300"
+      />
+    </svg>
   )
 }

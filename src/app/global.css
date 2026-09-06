@@ -3,75 +3,101 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+  Warm light palette: white surfaces on a soft orange-tinted ground.
+  Values are Tailwind's own oklch stops so the tokens and any raw utility
+  classes (orange-*, stone-*) stay in the same colour space.
+
+  Contrast notes. These are the two pairings that carry body text:
+    --primary        orange-700 vs white text ..... 4.8:1  (AA)
+    --muted-foreground stone-500 vs white ......... 4.8:1  (AA)
+  Do not lighten either one without re-checking.
+*/
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  /* Ground is orange-50, cards are pure white, so cards read as raised
+     without needing a heavy shadow. */
+  --background: oklch(0.98 0.016 73.684);
+  --foreground: oklch(0.216 0.006 56.043);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.216 0.006 56.043);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.216 0.006 56.043);
+
+  /* orange-700: deep enough to carry white button text at AA. */
+  --primary: oklch(0.553 0.195 38.402);
+  --primary-foreground: oklch(0.98 0.016 73.684);
+
+  /* The "light orange" surface tint: orange-100 with orange-900 on top. */
+  --secondary: oklch(0.954 0.038 75.164);
+  --secondary-foreground: oklch(0.408 0.123 38.172);
+  --muted: oklch(0.97 0.001 106.424);
+  --muted-foreground: oklch(0.553 0.013 58.071);
+  --accent: oklch(0.954 0.038 75.164);
+  --accent-foreground: oklch(0.408 0.123 38.172);
+
   --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  --border: oklch(0.923 0.003 48.717);
+  --input: oklch(0.869 0.005 56.366);
+  --ring: oklch(0.705 0.213 47.604);
+
   --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --chart-2: oklch(0.75 0.183 55.934);
+  --chart-3: oklch(0.837 0.128 66.29);
+  --chart-4: oklch(0.696 0.17 162.48);
+  --chart-5: oklch(0.553 0.013 58.071);
+
+  --radius: 0.75rem;
+
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.216 0.006 56.043);
+  --sidebar-primary: oklch(0.553 0.195 38.402);
+  --sidebar-primary-foreground: oklch(0.98 0.016 73.684);
+  --sidebar-accent: oklch(0.954 0.038 75.164);
+  --sidebar-accent-foreground: oklch(0.408 0.123 38.172);
+  --sidebar-border: oklch(0.923 0.003 48.717);
+  --sidebar-ring: oklch(0.705 0.213 47.604);
 }
 
+/*
+  Warm dark counterpart. Nothing toggles `.dark` today, but it is kept coherent
+  so that adding a theme switch later is a one-line change rather than a
+  re-audit of every screen.
+*/
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --background: oklch(0.147 0.004 49.25);
+  --foreground: oklch(0.985 0.001 106.423);
+  --card: oklch(0.216 0.006 56.043);
+  --card-foreground: oklch(0.985 0.001 106.423);
+  --popover: oklch(0.216 0.006 56.043);
+  --popover-foreground: oklch(0.985 0.001 106.423);
+  --primary: oklch(0.705 0.213 47.604);
+  --primary-foreground: oklch(0.216 0.006 56.043);
+  --secondary: oklch(0.268 0.007 34.298);
+  --secondary-foreground: oklch(0.954 0.038 75.164);
+  --muted: oklch(0.268 0.007 34.298);
+  --muted-foreground: oklch(0.709 0.01 56.259);
+  --accent: oklch(0.268 0.007 34.298);
+  --accent-foreground: oklch(0.954 0.038 75.164);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 18%);
+  --ring: oklch(0.646 0.222 41.116);
+  --chart-1: oklch(0.705 0.213 47.604);
+  --chart-2: oklch(0.75 0.183 55.934);
+  --chart-3: oklch(0.837 0.128 66.29);
+  --chart-4: oklch(0.696 0.17 162.48);
+  --chart-5: oklch(0.709 0.01 56.259);
+  --sidebar: oklch(0.216 0.006 56.043);
+  --sidebar-foreground: oklch(0.985 0.001 106.423);
+  --sidebar-primary: oklch(0.705 0.213 47.604);
+  --sidebar-primary-foreground: oklch(0.216 0.006 56.043);
+  --sidebar-accent: oklch(0.268 0.007 34.298);
+  --sidebar-accent-foreground: oklch(0.954 0.038 75.164);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.646 0.222 41.116);
 }
 
 @theme inline {
@@ -118,17 +144,55 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply text-foreground;
-    background: linear-gradient(135deg, #1b2735 0%, #090a0f 100%);
+    @apply bg-background text-foreground antialiased;
     min-height: 100vh;
   }
 }
 
-/* Custom animations for the landing page */
+/*
+  Landing-page sky.
+
+  --mx / --my are written by a rAF-throttled pointer handler as unitless
+  numbers in the range -1..1, so parallax layers can offset themselves in
+  pure CSS without React re-rendering the page on every mousemove.
+*/
+.sky {
+  --mx: 0;
+  --my: 0;
+  background:
+    radial-gradient(
+      120% 80% at 50% -10%,
+      oklch(0.954 0.038 75.164) 0%,
+      oklch(0.98 0.016 73.684) 45%,
+      oklch(1 0 0) 100%
+    );
+}
+
+/* Soft blurred cloud mass. Size/position come from utilities at the callsite. */
+.cloud {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(28px);
+  will-change: transform, translate;
+}
+
+/*
+  `.animate-drift` animates `transform`; if parallax also used `transform` the
+  animation would win and the pointer offset would be silently dropped. The
+  standalone `translate` property composites alongside `transform`, so a cloud
+  can drift and parallax at the same time.
+*/
+.parallax {
+  translate:
+    calc(var(--mx) * var(--depth, 10px))
+    calc(var(--my) * var(--depth, 10px));
+  transition: translate 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 @keyframes fade-in-up {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(24px);
   }
   to {
     opacity: 1;
@@ -138,10 +202,10 @@
 
 @keyframes scale-x {
   from {
-    transform: scaleX(0);
+    scale: 0 1;
   }
   to {
-    transform: scaleX(1);
+    scale: 1 1;
   }
 }
 
@@ -151,39 +215,73 @@
     transform: translateY(0px);
   }
   50% {
-    transform: translateY(-20px);
+    transform: translateY(-18px);
+  }
+}
+
+/* Slow lateral drift for background clouds. */
+@keyframes drift {
+  from {
+    transform: translateX(-4%);
+  }
+  to {
+    transform: translateX(4%);
+  }
+}
+
+/* Dashed connector "packet" travelling between nodes in the hero diagram. */
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -24;
   }
 }
 
 .animate-fade-in-up {
-  animation: fade-in-up 0.8s ease-out forwards;
+  animation: fade-in-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   opacity: 0;
 }
 
+/* `scale`, not `transform`, because Tailwind's scale utilities own that
+   property and the two would multiply. Collapsed up front so the bar stays
+   hidden through the animation's delay. */
 .animate-scale-x {
-  animation: scale-x 1.5s ease-out 1s forwards;
+  scale: 0 1;
+  animation: scale-x 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.6s forwards;
 }
 
 .animate-float {
-  animation: float 6s ease-in-out infinite;
+  animation: float 7s ease-in-out infinite;
 }
 
-.animation-delay-200 {
-  animation-delay: 200ms;
+.animate-drift {
+  animation: drift 26s ease-in-out infinite alternate;
 }
 
-.animation-delay-400 {
-  animation-delay: 400ms;
+.animate-dash-flow {
+  animation: dash-flow 1.2s linear infinite;
 }
 
-.animation-delay-600 {
-  animation-delay: 600ms;
-}
+.animation-delay-200 { animation-delay: 200ms; }
+.animation-delay-400 { animation-delay: 400ms; }
+.animation-delay-600 { animation-delay: 600ms; }
+.animation-delay-800 { animation-delay: 800ms; }
+.animation-delay-1000 { animation-delay: 1000ms; }
+.animation-delay-2000 { animation-delay: 2000ms; }
+.animation-delay-3000 { animation-delay: 3000ms; }
+.animation-delay-4000 { animation-delay: 4000ms; }
 
-.animation-delay-1000 {
-  animation-delay: 1000ms;
-}
-
-.animation-delay-2000 {
-  animation-delay: 2000ms;
+/* Respect users who have asked the OS to stop animating things. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up,
+  .animate-scale-x,
+  .animate-float,
+  .animate-drift,
+  .animate-dash-flow {
+    animation: none;
+    opacity: 1;
+  }
+  .parallax {
+    translate: none;
+    transition: none;
+  }
 }

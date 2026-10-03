@@ -11,6 +11,7 @@ import {
   Sparkles,
   Layers,
   Scale,
+  AlertTriangle,
 } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
@@ -118,6 +119,11 @@ export function OptimizePageClient({ params }: OptimizePageClientProps) {
   const [selected, setSelected] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
+  // Where the per-function numbers came from. "cloudwatch" means the enricher
+  // ran against the user's account; "estimates" means serverless.yml. The
+  // gateway reports it so the page can say which, instead of asserting "live".
+  const [telemetry, setTelemetry] = useState<"cloudwatch" | "estimates" | null>(null)
+  const [warnings, setWarnings] = useState<string[]>([])
   const { owner, repoName } = params
   const router = useRouter()
 
@@ -189,14 +195,20 @@ export function OptimizePageClient({ params }: OptimizePageClientProps) {
           cheapestName,
           fastestName,
           isUnambiguous,
+          telemetry: (data.telemetry === "cloudwatch" ? "cloudwatch" : "estimates") as
+            | "cloudwatch"
+            | "estimates",
+          warnings: (data.warnings ?? []) as string[],
         }
       })
-      .then(({ mappedData, cheapestName, fastestName, isUnambiguous }) => {
+      .then(({ mappedData, cheapestName, fastestName, isUnambiguous, telemetry, warnings }) => {
         setResults(mappedData)
         setCheapest(cheapestName)
         setFastest(fastestName)
         setUnambiguous(isUnambiguous)
         setSelected(cheapestName)
+        setTelemetry(telemetry)
+        setWarnings(warnings)
       })
       .catch((err: Error) => {
         setError(err.message)
@@ -579,16 +591,45 @@ export function OptimizePageClient({ params }: OptimizePageClientProps) {
       </Link>
 
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Live optimization analysis</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {telemetry === "estimates" ? "Optimization analysis" : "Live optimization analysis"}
+        </h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">
-          Your <code className="font-mono text-sm">serverless.yml</code> structure combined with
-          live performance data from AWS, for{" "}
+          Your <code className="font-mono text-sm">serverless.yml</code> structure combined with{" "}
+          {telemetry === "estimates"
+            ? "the runtime estimates it declares"
+            : "live performance data from AWS"}
+          , for{" "}
           <span className="font-mono text-foreground">
             {owner}/{repoName}
           </span>
           .
         </p>
       </div>
+
+      {/* Anything the gateway wants the user to know about how these numbers
+          were produced: enrichment skipped, enrichment failed, parser notes.
+          These used to be returned and never shown. */}
+      {warnings.length > 0 && (
+        <Alert className="mb-6 border-orange-200 bg-orange-50/60">
+          <AlertTriangle className="text-primary" />
+          <AlertTitle>
+            {telemetry === "estimates" ? "Based on estimates, not measurements" : "Notes on this run"}
+          </AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc space-y-1 pl-4">
+              {warnings.map((w) => (
+                <li key={w}>{w}</li>
+              ))}
+            </ul>
+            {telemetry === "estimates" && (
+              <Link href="/settings" className="mt-2 inline-block font-medium text-primary underline-offset-4 hover:underline">
+                Add your IAM role in Settings
+              </Link>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {renderContent()}
     </main>

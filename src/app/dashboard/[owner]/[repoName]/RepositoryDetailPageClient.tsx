@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Zap, FileCode2, AlertCircle, Copy, Check } from "lucide-react"
+import { ArrowLeft, Zap, FileCode2, AlertCircle, Copy, Check, Cloud, Settings } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -26,6 +26,9 @@ export function RepositoryDetailPageClient({ params }: RepositoryDetailPageClien
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  // null until the profile has loaded, so the page neither nags nor promises
+  // live data before it knows which applies.
+  const [awsConnected, setAwsConnected] = useState<boolean | null>(null)
   const { owner, repoName } = params
 
   useEffect(() => {
@@ -37,6 +40,19 @@ export function RepositoryDetailPageClient({ params }: RepositoryDetailPageClien
       setLoading(false)
       return
     }
+
+    // Whether a role ARN is on file decides what the analysis will run on.
+    // Without one the gateway falls back to the estimates in serverless.yml,
+    // and the user should learn that here, before clicking, not from a
+    // results page labelled "live".
+    fetch(`${API_URL}/api/profile/settings/`, {
+      headers: { Authorization: `Token ${token}` },
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((profile: { aws_role_arn?: string | null } | null) => {
+        setAwsConnected(Boolean(profile?.aws_role_arn))
+      })
+      .catch(() => setAwsConnected(false))
 
     fetch(`${API_URL}/api/repositories/${owner}/${repoName}/file/`, {
       headers: {
@@ -155,7 +171,7 @@ export function RepositoryDetailPageClient({ params }: RepositoryDetailPageClien
           </p>
         </div>
 
-        {fileContent && !error && (
+        {fileContent && !error && awsConnected !== false && (
           <Button asChild size="lg" className="group shadow-sm shadow-orange-600/20">
             <Link href={`/dashboard/${owner}/${repoName}/optimize`}>
               <Zap />
@@ -164,6 +180,37 @@ export function RepositoryDetailPageClient({ params }: RepositoryDetailPageClien
           </Button>
         )}
       </div>
+
+      {/* No role on file: say so before the run, offer the fix, and still
+          allow the run on estimates for anyone who wants a quick look. */}
+      {fileContent && !error && awsConnected === false && (
+        <Alert className="mb-7 border-orange-200 bg-orange-50/60">
+          <Cloud className="text-primary" />
+          <AlertTitle>Connect your AWS account to analyse real traffic</AlertTitle>
+          <AlertDescription>
+            <p>
+              Optifuse reads your functions&apos; durations, memory and invocation counts from
+              CloudWatch through a read-only IAM role. Without one, the analysis uses the
+              estimates in your <code className="font-mono text-xs">serverless.yml</code>, which
+              are only as good as the guesses in it.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button asChild size="sm">
+                <Link href="/settings">
+                  <Settings />
+                  Add IAM role in Settings
+                </Link>
+              </Button>
+              <Button asChild size="sm" variant="outline" className="bg-white/70">
+                <Link href={`/dashboard/${owner}/${repoName}/optimize`}>
+                  <Zap />
+                  Run with YAML estimates
+                </Link>
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card>
         <CardHeader>

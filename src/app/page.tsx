@@ -4,7 +4,7 @@ import type React from "react"
 import Link from "next/link"
 import { useEffect, useRef } from "react"
 import {
-  ArrowRight,
+  
   Cloud,
   DollarSign,
   GitBranch,
@@ -15,6 +15,7 @@ import {
   Zap,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { AuthCta } from "@/components/auth-cta"
 import { Badge } from "@/components/ui/badge"
 import { SiteFooter } from "@/components/site-footer"
 
@@ -168,12 +169,10 @@ export default function LandingPage() {
             </p>
 
             <div className="animate-fade-in-up animation-delay-600 mt-9 flex flex-col justify-center gap-3 sm:flex-row">
-              <Button asChild size="lg" className="group shadow-sm shadow-orange-600/20">
-                <Link href="/login">
-                  Get started free
-                  <ArrowRight className="transition-transform group-hover:translate-x-0.5" />
-                </Link>
-              </Button>
+              <AuthCta
+                signedOutLabel="Get started free"
+                className="group shadow-sm shadow-orange-600/20"
+              />
               <Button asChild size="lg" variant="outline" className="bg-white/70 backdrop-blur">
                 <Link href="#how-it-works">See how it works</Link>
               </Button>
@@ -264,12 +263,11 @@ export default function LandingPage() {
                 Connect a repository and run your first analysis. It takes a GitHub
                 sign-in and a read-only IAM role.
               </p>
-              <Button asChild size="lg" className="group mt-8 shadow-sm shadow-orange-600/20">
-                <Link href="/login">
-                  Start optimising
-                  <ArrowRight className="transition-transform group-hover:translate-x-0.5" />
-                </Link>
-              </Button>
+              <AuthCta
+                signedOutLabel="Start optimising"
+                signedInLabel="Open dashboard"
+                className="group mt-8 shadow-sm shadow-orange-600/20"
+              />
             </div>
           </div>
         </div>

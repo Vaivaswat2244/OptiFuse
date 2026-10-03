@@ -1,5 +1,3 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -7,7 +5,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Github, Cloud, ShieldCheck, AlertCircle } from "lucide-react"
+import { Cloud, ShieldCheck, AlertCircle } from "lucide-react"
+import { GitHubLoginButton } from "./github-login-button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function LoginPage() {
@@ -31,8 +30,6 @@ export default function LoginPage() {
     )
   }
 
-  const GITHUB_AUTH_URL = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&scope=read:user,repo`
-
   return (
     <main className="sky relative flex min-h-[calc(100vh-4rem)] items-center justify-center overflow-hidden p-6">
       <div className="pointer-events-none absolute inset-0" aria-hidden>
@@ -53,12 +50,7 @@ export default function LoginPage() {
         </CardHeader>
 
         <CardContent className="space-y-5">
-          <Button asChild className="w-full" size="lg">
-            <Link href={GITHUB_AUTH_URL}>
-              <Github />
-              Continue with GitHub
-            </Link>
-          </Button>
+          <GitHubLoginButton clientId={GITHUB_CLIENT_ID} />
 
           <div className="flex items-start gap-2.5 rounded-xl bg-secondary p-3.5">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
